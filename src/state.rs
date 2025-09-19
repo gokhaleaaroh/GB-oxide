@@ -31,7 +31,7 @@ pub struct Registers {
 }
 
 impl Registers {
-    pub fn reset_registers() -> Self {
+    fn reset_registers() -> Self {
 	Self {
 	    a: 0x01,
 	    f: 0xB0,
@@ -45,103 +45,6 @@ impl Registers {
 	    sp: 0xFFEE
 	}
     }
-
-    /*
-    pub fn get_register(&mut self, reg: &Register) -> u16 {
-	match reg {
-	    Register::A => self.a,
-
-	    Register::F => self.f,
-
-	    Register::AF => {
-		self.a = ((val >> 8) & 0x0F) as u8;
-		self.f = (val & 0x0F) as u8;
-	    }
-
-	    Register::B => self.b = val as u8,
-
-	    Register::C => self.c = val as u8,
-
-	    Register::BC => {
-		self.b = ((val >> 8) & 0x0F) as u8;
-		self.c = (val & 0x0F) as u8;
-	    }    
-
-	    Register::D => self.d = val as u8,
-
-	    Register::E => self.e = val as u8,
-
-	    Register::DE => {
-		self.d = ((val >> 8) & 0x0F) as u8;
-		self.e = (val & 0x0F) as u8;
-	    }
-
-	    Register::H => self.h = val as u8,
-
-	    Register::L => self.l = val as u8,
-
-	    Register::HL => {
-		self.h = ((val >> 8) & 0x0F) as u8;
-		self.l = (val & 0x0F) as u8;
-	    }
-
-	    Register::PC => self.pc = val,
-	    Register::SP => self.pc = val,
-	}
-    }
-    */
-
-    pub fn update_register8(&mut self, reg: &Register, val: u8) {
-	match reg {
-	    Register::A => self.a = val,
-
-	    Register::F => self.f = val,
-
-	    Register::B => self.b = val,
-
-	    Register::C => self.c = val,
-
-	    Register::D => self.d = val,
-
-	    Register::E => self.e = val,
-
-	    Register::H => self.h = val,
-
-	    Register::L => self.l = val,
-
-	    _ => ()
-	}
-    }
-
-    pub fn update_register16(&mut self, reg: &Register, val: u16) {
-	match reg {
-	    Register::AF => {
-		self.a = ((val >> 8) & 0x0F) as u8;
-		self.f = (val & 0x0F) as u8;
-	    }
-
-	    Register::BC => {
-		self.b = ((val >> 8) & 0x0F) as u8;
-		self.c = (val & 0x0F) as u8;
-	    }    
-
-	    Register::DE => {
-		self.d = ((val >> 8) & 0x0F) as u8;
-		self.e = (val & 0x0F) as u8;
-	    }
-
-	    Register::HL => {
-		self.h = ((val >> 8) & 0x0F) as u8;
-		self.l = (val & 0x0F) as u8;
-	    }
-
-	    Register::PC => self.pc = val,
-	    Register::SP => self.pc = val,
-
-	    _ => ()
-	}
-    }
-
 }
 
 pub struct Memory {
@@ -192,8 +95,66 @@ impl Cartridge {
 }
 
 pub struct GameState {
-    pub gb: Gameboy,
-    pub cart: Cartridge,
+    gb: Gameboy,
+    cart: Cartridge,
+}
+
+impl GameState {
+
+    pub fn get_register8(&self, reg: Register) -> u8 {
+	0
+    }
+
+    pub fn update_register8(&mut self, reg: Register, val: u8) {
+	match reg {
+	    Register::A => self.gb.registers.a = val,
+
+	    Register::F => self.gb.registers.f = val,
+
+	    Register::B => self.gb.registers.b = val,
+
+	    Register::C => self.gb.registers.c = val,
+
+	    Register::D => self.gb.registers.d = val,
+
+	    Register::E => self.gb.registers.e = val,
+
+	    Register::H => self.gb.registers.h = val,
+
+	    Register::L => self.gb.registers.l = val,
+
+	    _ => ()
+	}
+    }
+
+    pub fn update_register16(&mut self, reg: Register, val: u16) {
+	match reg {
+	    Register::AF => {
+		self.gb.registers.a = ((val >> 8) & 0x0F) as u8;
+		self.gb.registers.f = (val & 0x0F) as u8;
+	    }
+
+	    Register::BC => {
+		self.gb.registers.b = ((val >> 8) & 0x0F) as u8;
+		self.gb.registers.c = (val & 0x0F) as u8;
+	    }    
+
+	    Register::DE => {
+		self.gb.registers.d = ((val >> 8) & 0x0F) as u8;
+		self.gb.registers.e = (val & 0x0F) as u8;
+	    }
+
+	    Register::HL => {
+		self.gb.registers.h = ((val >> 8) & 0x0F) as u8;
+		self.gb.registers.l = (val & 0x0F) as u8;
+	    }
+
+	    Register::PC => self.gb.registers.pc = val,
+	    Register::SP => self.gb.registers.pc = val,
+
+	    _ => ()
+	}
+    }
 }
 
 pub fn read(game_state: &GameState, addr: u16) -> u8 {
