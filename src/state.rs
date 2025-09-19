@@ -25,10 +25,10 @@ pub struct Flags {
     pub C: bool
 }
 
-const flag_Z = 0b1000_0000;
-const flag_N = 0b0100_0000;
-const flag_H = 0b0010_0000;
-const flag_C = 0b0001_0000;
+const FLAG_Z: u8 = 0b1000_0000;
+const FLAG_N: u8 = 0b0100_0000;
+const FLAG_H: u8 = 0b0010_0000;
+const FLAG_C: u8 = 0b0001_0000;
 
 pub struct Registers {
     a: u8,
@@ -118,6 +118,10 @@ impl GameState {
 	0
     }
 
+    pub fn get_register16(&self, reg: Register) -> u16 {
+	0
+    }
+
     pub fn set_register8(&mut self, reg: Register, val: u8) {
 	match reg {
 	    Register::A => self.gb.registers.a = val,
@@ -171,28 +175,28 @@ impl GameState {
 
     pub fn set_flags(&mut self, flags: &Flags) {
 	if flags.Z {
-	    self.gb.registers.f |= flag_Z;
+	    self.gb.registers.f |= FLAG_Z;
 	}
 
 	if flags.N {
-	    self.gb.registers.f |= flag_N;
+	    self.gb.registers.f |= FLAG_N;
 	}
 
 	if flags.H {
-	    self.gb.registers.f |= flag_H;
+	    self.gb.registers.f |= FLAG_H;
 	}
 
 	if flags.C {
-	    self.gb.registers.f |= flag_C;
+	    self.gb.registers.f |= FLAG_C;
 	}
     }
 
     pub fn get_flags(&self) -> Flags {
 	Flags {
-	    Z: self.gb.registers.f & flag_Z != 0,
-	    N: self.gb.registers.f & flag_N != 0,
-	    H: self.gb.registers.f & flag_H != 0,
-	    C: self.gb.registers.f & flag_C != 0,
+	    Z: self.gb.registers.f & FLAG_Z != 0,
+	    N: self.gb.registers.f & FLAG_N != 0,
+	    H: self.gb.registers.f & FLAG_H != 0,
+	    C: self.gb.registers.f & FLAG_C != 0,
 	}
     }
 
