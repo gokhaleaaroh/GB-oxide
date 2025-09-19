@@ -1,8 +1,16 @@
+// https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7 - reference manual
+
 use crate::state::{GameState, Register, Flags};
+
+// TODO Load instructions
+fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
+    game_state.set_register8(r1, game_state.get_register8(r2));
+}
 
 // Arithmetic
 
 // Add Instructions
+
 // returns 8-bit sum value, bit 3 overflow, and bit 7 overflow
 fn add8(a: u8, b: u8, carry_in: u8) -> (u8, bool, bool) {
     let sum = (a as u16) + (b as u16) + (carry_in as u16);
@@ -78,6 +86,26 @@ fn add_hl_r16(game_state: &mut GameState, r: Register) {
     game_state.set_flags(&new_flags);
 }
 
+// TODO Compare Instructions
+
+// TODO Decrease Instructions
+
+// TODO Increase Instructions
+
+// TODO Subtract Instructions
+
+// TODO Bitwise Logic
+
+// TODO Bit Flag
+
+// TODO Bit Shift
+
+// TODO Control Flow
+
+// TODO Carry Flag
+
+// TODO Stack Manipulation
+
 fn add_hl_sp(game_state: &mut GameState) {
     add_hl_r16(game_state, Register::SP);
 }
@@ -117,8 +145,6 @@ fn add_sp_e8(game_state: &mut GameState, e: i8) {
     game_state.set_flags(&new_flags);
 }
 
+// TODO Interrupts
 
-// Load instructions
-fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
-    game_state.set_register8(r1, game_state.get_register8(r2));
-}
+// TODO Misc
