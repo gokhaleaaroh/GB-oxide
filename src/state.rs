@@ -1,5 +1,6 @@
 use std::fs;
 
+#[derive(Copy, Clone, Debug)]
 pub enum Register {
     A,
     F,
@@ -16,6 +17,18 @@ pub enum Register {
     PC,
     SP,
 }
+
+pub struct Flags {
+    pub Z: bool,
+    pub N: bool,
+    pub H: bool,
+    pub C: bool
+}
+
+const flag_Z = 0b1000_0000;
+const flag_N = 0b0100_0000;
+const flag_H = 0b0010_0000;
+const flag_C = 0b0001_0000;
 
 pub struct Registers {
     a: u8,
@@ -105,7 +118,7 @@ impl GameState {
 	0
     }
 
-    pub fn update_register8(&mut self, reg: Register, val: u8) {
+    pub fn set_register8(&mut self, reg: Register, val: u8) {
 	match reg {
 	    Register::A => self.gb.registers.a = val,
 
@@ -127,7 +140,7 @@ impl GameState {
 	}
     }
 
-    pub fn update_register16(&mut self, reg: Register, val: u16) {
+    pub fn set_register16(&mut self, reg: Register, val: u16) {
 	match reg {
 	    Register::AF => {
 		self.gb.registers.a = ((val >> 8) & 0x0F) as u8;
@@ -155,46 +168,75 @@ impl GameState {
 	    _ => ()
 	}
     }
-}
 
-pub fn read(game_state: &GameState, addr: u16) -> u8 {
-    match addr {
-	0x0000..=0x3FFF => {
-	    game_state.cart.rom[addr as usize]
-	}
-	
-	0x4000..=0x7FFF => { // TODO Implement Bank switching
-	    game_state.cart.rom[addr as usize]
+    pub fn set_flags(&mut self, flags: &Flags) {
+	if flags.Z {
+	    self.gb.registers.f |= flag_Z;
 	}
 
-	0x8000..=0x9FFF => {
-	    game_state.gb.memory.vram[addr as usize - 0x8000]
+	if flags.N {
+	    self.gb.registers.f |= flag_N;
 	}
 
-	0xA000..=0xBFFF => { // TODO External RAM
-	    0xFF
+	if flags.H {
+	    self.gb.registers.f |= flag_H;
 	}
 
-	0xC000..=0xDFFF => {
-	    game_state.gb.memory.wram[addr as usize - 0xC000]
+	if flags.C {
+	    self.gb.registers.f |= flag_C;
 	}
-
-	0xE000..=0xFDFF => {
-	    game_state.gb.memory.wram[addr as usize - 0xE000]
-	}
-
-	0xFE00..=0xFE9F => {
-	    game_state.gb.memory.oam[addr as usize - 0xFE00]
-	}
-
-	0xFF80..=0xFFFE => {
-	    game_state.gb.memory.hram[addr as usize - 0xFF80]
-	}
-
-	_ => 0xFF
     }
+
+    pub fn get_flags(&self) -> Flags {
+	Flags {
+	    Z: self.gb.registers.f & flag_Z != 0,
+	    N: self.gb.registers.f & flag_N != 0,
+	    H: self.gb.registers.f & flag_H != 0,
+	    C: self.gb.registers.f & flag_C != 0,
+	}
+    }
+
+    pub fn read(&self, addr: u16) -> u8 {
+	match addr {
+	    0x0000..=0x3FFF => {
+		self.cart.rom[addr as usize]
+	    }
+	    
+	    0x4000..=0x7FFF => { // TODO Implement Bank switching
+		self.cart.rom[addr as usize]
+	    }
+
+	    0x8000..=0x9FFF => {
+		self.gb.memory.vram[addr as usize - 0x8000]
+	    }
+
+	    0xA000..=0xBFFF => { // TODO External RAM
+		0xFF
+	    }
+
+	    0xC000..=0xDFFF => {
+		self.gb.memory.wram[addr as usize - 0xC000]
+	    }
+
+	    0xE000..=0xFDFF => {
+		self.gb.memory.wram[addr as usize - 0xE000]
+	    }
+
+	    0xFE00..=0xFE9F => {
+		self.gb.memory.oam[addr as usize - 0xFE00]
+	    }
+
+	    0xFF80..=0xFFFE => {
+		self.gb.memory.hram[addr as usize - 0xFF80]
+	    }
+
+	    _ => 0xFF
+	}
+    }
+
+    pub fn write(&mut self, value: u8,  addr: u16) -> bool {
+	false
+    }
+
 }
 
-pub fn write(value: u8, game_state: &GameState, addr: u16) -> bool {
-    false
-}
