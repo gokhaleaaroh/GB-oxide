@@ -2,9 +2,85 @@
 
 use crate::state::{Flags, GameState, Register};
 
-// TODO Load instructions
+// Load instructions
 fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
     game_state.set_register8(r1, game_state.get_register8(r2));
+}
+
+fn ld_r8_n8(game_state: &mut GameState, r1: Register, val: u8) {
+    game_state.set_register8(r1, val);
+}
+
+fn ld_r16_n16(game_state: &mut GameState, r1: Register, val: u16) {
+    game_state.set_register16(r1, val);
+}
+
+fn ld_hladdr_r8(game_state: &mut GameState, r: Register) {
+    game_state.write(game_state.get_register8(r), game_state.get_register16(Register::HL));
+}
+
+fn ld_hladdr_n8(game_state: &mut GameState, val: u8) {
+    game_state.write(val, game_state.get_register16(Register::HL));
+}
+
+fn ld_r8_hladdr(game_state: &mut GameState, r: Register) {
+    game_state.set_register8(r, game_state.read(game_state.get_register16(Register::HL)));
+}
+
+fn ld_r16addr_a(game_state: &mut GameState, r: Register) {
+    game_state.write(game_state.get_register8(Register::A), game_state.get_register16(r));
+}
+
+fn ld_n16addr_a(game_state: &mut GameState, addr: u16) {
+    game_state.write(game_state.get_register8(Register::A), addr);
+}
+
+fn ldh_n16addr_a(game_state: &mut GameState, addr: u16) {
+    if 0xFF00 <= addr {
+	game_state.write(game_state.get_register8(Register::A), addr);
+    }
+}
+
+fn ldh_caddr_a(game_state: &mut GameState) {
+    game_state.write(game_state.get_register8(Register::A), 0xFF00 + game_state.get_register8(Register::C) as u16);
+}
+
+fn ld_a_r16addr(game_state: &mut GameState, r: Register) {
+    game_state.set_register8(Register::A, game_state.read(game_state.get_register16(r)));
+}
+
+fn ld_a_n16addr(game_state: &mut GameState, addr: u16) {
+    game_state.set_register8(Register::A, game_state.read(addr));
+}
+
+fn ldh_a_n16addr(game_state: &mut GameState, addr: u16) {
+    if 0xFF00 <= addr {
+	game_state.set_register8(Register::A, game_state.read(addr));
+    }
+}
+
+fn ldh_a_caddr(game_state: &mut GameState) {
+    game_state.set_register8(Register::A, game_state.read(game_state.get_register8(Register::C) as u16 + 0xFF00));
+}
+
+fn ld_hliaddr_a(game_state: &mut GameState) {
+    ld_hladdr_r8(game_state, Register::A);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) + 1);
+}
+
+fn ld_hldaddr_a(game_state: &mut GameState) {
+    ld_hladdr_r8(game_state, Register::A);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
+}
+
+fn ld_a_hld(game_state: &mut GameState) {
+    ld_a_r16addr(game_state, Register::HL);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
+}
+
+fn ld_a_hli(game_state: &mut GameState) {
+    ld_a_r16addr(game_state, Register::HL);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) + 1);
 }
 
 // Arithmetic
