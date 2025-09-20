@@ -656,7 +656,28 @@ fn swap_hladdr(game_state: &mut GameState, r: Register) {
 
 // TODO Control Flow
 
-// TODO Carry Flag
+// Carry Flag
+fn ccf(game_state: &mut GameState)  {
+    let old_flags = game_state.get_flags();
+    let new_flags = Flags {
+	Z: old_flags.Z,
+	N: false,
+	H: false,
+	C: !old_flags.C
+    };
+    game_state.set_flags(&new_flags);
+}
+
+fn scf(game_state: &mut GameState)  {
+    let old_flags = game_state.get_flags();
+    let new_flags = Flags {
+	Z: old_flags.Z,
+	N: false,
+	H: false,
+	C: true
+    };
+    game_state.set_flags(&new_flags);
+}
 
 // TODO Stack Manipulation
 
