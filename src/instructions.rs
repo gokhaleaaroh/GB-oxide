@@ -388,7 +388,54 @@ fn xor_a_n8(game_state: &mut GameState, val: u8) {
     game_state.set_register8(Register::A, result);
 }
 
-// TODO Bit Flag
+// Bit Flag
+fn bit_u3_r8(game_state: &mut GameState, u: u8,  r: Register) {
+    if u > 7  { return }
+    let zero_flag = (game_state.get_register8(r) & (1 << u)) == 0;
+    let new_flags = Flags {
+	Z: zero_flag,
+	N: false,
+	H: true,
+	C: game_state.get_flags().C
+    };
+
+    game_state.set_flags(&new_flags);
+}
+
+fn bit_u3_hladdr(game_state: &mut GameState, u: u8) {
+    if u > 7  { return }
+    let zero_flag = (game_state.read(game_state.get_register16(Register::HL)) & (1 << u)) == 0;
+    let new_flags = Flags {
+	Z: zero_flag,
+	N: false,
+	H: true,
+	C: game_state.get_flags().C
+    };
+
+    game_state.set_flags(&new_flags);
+}
+
+fn res_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
+    if u > 7 { return }
+    game_state.set_register8(r, game_state.get_register8(r) & !(1 << u));
+}
+
+fn res_u3_hladdr(game_state: &mut GameState, u: u8, r: Register) {
+    if u > 7 { return }
+    let addr = game_state.get_register16(Register::HL);
+    game_state.write(game_state.read(addr) & !(1 << u), addr);
+}
+
+fn set_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
+    if u > 7 { return }
+    game_state.set_register8(r, game_state.get_register8(r) | (1 << u));
+}
+
+fn set_u3_hladdr(game_state: &mut GameState, u: u8, r: Register) {
+    if u > 7 { return }
+    let addr = game_state.get_register16(Register::HL);
+    game_state.write(game_state.read(addr) | (1 << u), addr);
+}
 
 // TODO Bit Shift
 
