@@ -437,7 +437,222 @@ fn set_u3_hladdr(game_state: &mut GameState, u: u8, r: Register) {
     game_state.write(game_state.read(addr) | (1 << u), addr);
 }
 
-// TODO Bit Shift
+// Bit Shift
+fn general_rl(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
+    let old_c = if game_state.get_flags().C { 1 } else { 0 };
+    let new_c = val >> 7;
+    let result = (val << 1) | old_c;
+    let new_flags = Flags {
+	Z: result == 0 && check_zero,
+	N: false,
+	H: false,
+	C: new_c == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn rl_r8(game_state: &mut GameState, r: Register) {
+    let result = general_rl(game_state, game_state.get_register8(r), true);
+    game_state.set_register8(r, result);
+}
+
+fn rl_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_rl(game_state, game_state.read(addr), true);
+    game_state.write(result, addr);
+}
+
+fn rl_a(game_state: &mut GameState) {
+    let result = general_rl(game_state, game_state.get_register8(Register::A), false);
+    game_state.set_register8(Register::A, result);
+}
+
+fn general_rlc(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
+    let old_msb = val >> 7;
+    let result = (val << 1) | old_msb;
+    let new_flags = Flags {
+	Z: result == 0 && check_zero,
+	N: false,
+	H: false,
+	C: old_msb == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn rlc_r8(game_state: &mut GameState, r: Register) {
+    let result = general_rlc(game_state, game_state.get_register8(r), true);
+    game_state.set_register8(r, result);
+}
+
+fn rlc_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_rlc(game_state, game_state.read(addr), true);
+    game_state.write(result, addr);
+}
+
+fn rlc_a(game_state: &mut GameState) {
+    let result = general_rlc(game_state, game_state.get_register8(Register::A), false);
+    game_state.set_register8(Register::A, result);
+}
+
+fn general_rr(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
+    let old_c = if game_state.get_flags().C { 1 } else { 0 };
+    let new_c = val & 1;
+    let result = (val >> 1) | (old_c << 7);
+    let new_flags = Flags {
+	Z: result == 0 && check_zero,
+	N: false,
+	H: false,
+	C: new_c == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn rr_r8(game_state: &mut GameState, r: Register) {
+    let result = general_rr(game_state, game_state.get_register8(r), true);
+    game_state.set_register8(r, result);
+}
+
+fn rr_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_rr(game_state, game_state.read(addr), true);
+    game_state.write(result, addr);
+}
+
+fn rr_a(game_state: &mut GameState) {
+    let result = general_rr(game_state, game_state.get_register8(Register::A), false);
+    game_state.set_register8(Register::A, result);
+}
+
+fn general_rrc(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
+    let old_lsb = val & 1;
+    let result = (val >> 1) | (old_lsb << 7);
+    let new_flags = Flags {
+	Z: result == 0 && check_zero,
+	N: false,
+	H: false,
+	C: old_lsb == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn rrc_r8(game_state: &mut GameState, r: Register) {
+    let result = general_rrc(game_state, game_state.get_register8(r), true);
+    game_state.set_register8(r, result);
+}
+
+fn rrc_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_rrc(game_state, game_state.read(addr), true);
+    game_state.write(result, addr);
+}
+
+fn rrc_a(game_state: &mut GameState) {
+    let result = general_rrc(game_state, game_state.get_register8(Register::A), false);
+    game_state.set_register8(Register::A, result);
+}
+
+fn general_sla(game_state: &mut GameState, val: u8) -> u8 {
+    let old_msb = val >> 7;
+    let result = val << 1;
+    let new_flags = Flags {
+	Z: result == 0,
+	N: false,
+	H: false,
+	C: old_msb == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn sla_r8(game_state: &mut GameState, r: Register) {
+    let result = general_sla(game_state, game_state.get_register8(r));
+    game_state.set_register8(r, result);
+}
+
+fn sla_hladdr(game_state: &mut GameState, r: Register) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_sla(game_state, game_state.read(addr));
+    game_state.write(result, addr);
+}
+
+fn general_sra(game_state: &mut GameState, val: u8) -> u8 {
+    let old_lsb = val & 1;
+    let msb_mask = val & 0x80;
+    let result = (val >> 1) | msb_mask;
+    let new_flags = Flags {
+	Z: result == 0,
+	N: false,
+	H: false,
+	C: old_lsb == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn sra_r8(game_state: &mut GameState, r: Register) {
+    let result = general_sra(game_state, game_state.get_register8(r));
+    game_state.set_register8(r, result);
+}
+
+fn sra_hladdr(game_state: &mut GameState, r: Register) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_sra(game_state, game_state.read(addr));
+    game_state.write(result, addr);
+}
+
+fn general_srl(game_state: &mut GameState, val: u8) -> u8 {
+    let old_lsb = val & 1;
+    let result = val >> 1;
+    let new_flags = Flags {
+	Z: result == 0,
+	N: false,
+	H: false,
+	C: old_lsb == 1
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn srl_r8(game_state: &mut GameState, r: Register) {
+    let result = general_sla(game_state, game_state.get_register8(r));
+    game_state.set_register8(r, result);
+}
+
+fn srl_hladdr(game_state: &mut GameState, r: Register) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_srl(game_state, game_state.read(addr));
+    game_state.write(result, addr);
+}
+
+fn swap_general(game_state: &mut GameState, val: u8) -> u8 {
+    let lower_mask = val << 4;
+    let upper_mask = val >> 4;
+    let result = lower_mask | upper_mask;
+    let new_flags = Flags {
+	Z: result == 0,
+	N: false,
+	H: false,
+	C: false
+    };
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn swap_r8(game_state: &mut GameState, r: Register) {
+    let result = swap_general(game_state, game_state.get_register8(r));
+    game_state.set_register8(r, result);
+}
+
+fn swap_hladdr(game_state: &mut GameState, r: Register) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = swap_general(game_state, game_state.read(addr));
+    game_state.write(result, addr);
+}
 
 // TODO Control Flow
 
