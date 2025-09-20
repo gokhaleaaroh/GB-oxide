@@ -221,7 +221,96 @@ fn inc_r16(game_state: &mut GameState, r: Register) {
     game_state.set_register16(r, game_state.get_register16(r) + (1 as u16));
 }
 
-// TODO Bitwise Logic
+// Bitwise Logic
+fn general_and_a(game_state: &mut GameState, val: u8) -> u8 {
+    let result = game_state.get_register8(Register::A) & val;
+    let new_flags = Flags {
+	Z: result == 0,
+	N: false,
+	H: true,
+	C: false
+    };
+
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn and_a_r8(game_state: &mut GameState, r: Register) {
+    let result = general_and_a(game_state, game_state.get_register8(r));
+    game_state.set_register8(Register::A, result);
+}
+
+fn and_a_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_and_a(game_state, game_state.read(addr));
+    game_state.write(result, addr);
+}
+
+fn and_a_n8(game_state: &mut GameState, val: u8) {
+    let result = general_and_a(game_state, val);
+    game_state.set_register8(Register::A, result);
+}
+
+fn cpl(game_state: &mut GameState) {
+    game_state.set_register8(Register::A, !game_state.get_register8(Register::A));
+
+    let old_flags = game_state.get_flags();
+
+    let new_flags = Flags {
+	Z: old_flags.Z,
+	N: true,
+	H: true,
+	C: old_flags.C
+    };
+
+    game_state.set_flags(&new_flags);
+}
+
+fn general_or_a(game_state: &mut GameState, val: u8, exclusive: bool) -> u8 {
+    let a = game_state.get_register8(Register::A);
+    let result =  if exclusive { a ^ val } else { a | val };
+    let new_flags = Flags {
+	Z: result == 0,
+	N: false,
+	H: false,
+	C: false
+    };
+
+    game_state.set_flags(&new_flags);
+    result
+}
+
+fn or_a_r8(game_state: &mut GameState, r: Register) {
+    let result = general_or_a(game_state, game_state.get_register8(r), false);
+    game_state.set_register8(Register::A, result);
+}
+
+fn or_a_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_or_a(game_state, game_state.read(addr), false);
+    game_state.write(result, addr);
+}
+
+fn or_a_n8(game_state: &mut GameState, val: u8) {
+    let result = general_or_a(game_state, val, false);
+    game_state.set_register8(Register::A, result);
+}
+
+fn xor_a_r8(game_state: &mut GameState, r: Register) {
+    let result = general_or_a(game_state, game_state.get_register8(r), true);
+    game_state.set_register8(Register::A, result);
+}
+
+fn xor_a_hladdr(game_state: &mut GameState) {
+    let addr = game_state.get_register16(Register::HL);
+    let result = general_or_a(game_state, game_state.read(addr), true);
+    game_state.write(result, addr);
+}
+
+fn xor_a_n8(game_state: &mut GameState, val: u8) {
+    let result = general_or_a(game_state, val, true);
+    game_state.set_register8(Register::A, result);
+}
 
 // TODO Bit Flag
 
