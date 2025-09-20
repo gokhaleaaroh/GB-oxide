@@ -12,6 +12,7 @@ fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
 // Add Instructions
 
 // returns 8-bit sum value, bit 3 overflow, and bit 7 overflow
+
 fn add8(a: u8, b: u8, carry_in: u8) -> (u8, bool, bool) {
     let sum = (a as u16) + (b as u16) + (carry_in as u16);
     let trunc_sum = sum as u8;
@@ -86,13 +87,64 @@ fn add_hl_r16(game_state: &mut GameState, r: Register) {
     game_state.set_flags(&new_flags);
 }
 
+// Subtract Instructions
+
+// 8-bit difference, bit 4 borrow, final borrow
+fn sub8(a: u8, b: u8, carry_in: u8) -> (u8, bool, bool) {
+    let result = (a as u16) - (b as u16);
+
+    let half_borrow = (a & 0xF) < (b & 0xF) + carry_in;
+    let borrow = (a as u16) < (b as u16 + carry_in as u16);
+
+    (result as u8, half_borrow, borrow)
+}
+
+fn general_sub_a_n8(game_state: &mut GameState, val: u8, borrow_on: bool) {
+    let c: u8 = if borrow_on && game_state.get_flags().C { 1 } else { 0 } ;
+    let (result, half_borrow, borrow) = sub8(game_state.get_register8(Register::A), val, c);
+
+    game_state.set_register8(Register::A, result);
+
+    let new_flags = Flags{
+	Z: result == 0,
+	N: true,
+	H: half_borrow,
+	C: borrow
+    };
+
+    game_state.set_flags(&new_flags);
+}
+
+fn sbc_a_r8(game_state: &mut GameState, r: Register) {
+    general_sub_a_n8(game_state, game_state.get_register8(r), true);
+}
+
+fn sbc_a_hladdr(game_state: &mut GameState) {
+    general_sub_a_n8(game_state, game_state.read(game_state.get_register16(Register::HL)), true);
+}
+
+fn sbc_a_n8(game_state: &mut GameState, val: u8) {
+    general_sub_a_n8(game_state, val, true);
+}
+
+fn sub_a_r8(game_state: &mut GameState, r: Register) {
+    general_sub_a_n8(game_state, game_state.get_register8(r), false);
+}
+
+fn sub_a_hladdr(game_state: &mut GameState) {
+    general_sub_a_n8(game_state, game_state.read(game_state.get_register16(Register::HL)), false);
+}
+
+fn sub_a_n8(game_state: &mut GameState, val: u8) {
+    general_sub_a_n8(game_state, val, false);
+}
+
 // TODO Compare Instructions
 
 // TODO Decrease Instructions
 
 // TODO Increase Instructions
 
-// TODO Subtract Instructions
 
 // TODO Bitwise Logic
 
