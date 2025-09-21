@@ -750,7 +750,7 @@ pub fn ld_n16addr_sp(game_state: &mut GameState) {
     let val1 =  (sp_val & 0xFF) as u8;
     let val2 = (sp_val >> 8) as u8;
     game_state.write(val1, addr);
-    game_state.write(val2, addr);
+    game_state.write(val2, addr + 1);
 }
 
 // Interrupts
