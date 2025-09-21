@@ -30,7 +30,7 @@ const FLAG_N: u8 = 0b0100_0000;
 const FLAG_H: u8 = 0b0010_0000;
 const FLAG_C: u8 = 0b0001_0000;
 
-pub struct Registers {
+struct Registers {
     a: u8,
     f: u8,
     b: u8,
@@ -60,20 +60,41 @@ impl Registers {
     }
 }
 
-pub struct Memory {
+struct Memory {
     wram: [u8; 0x2000],
     vram: [u8; 0x2000],
     oam: [u8; 0xA0],
     hram: [u8; 0x7F],
 }
 
-pub struct Gameboy {
-    pub registers: Registers,
-    pub memory: Memory,
+impl Memory {
+    fn reset_memory() -> Self {
+	Self {
+	    wram: [0; 0x2000],
+	    vram: [0; 0x2000],
+	    oam: [0; 0xA0],
+	    hram: [0; 0x7F],
+	}
+    }
 }
 
+struct Gameboy {
+    IME: bool,
+    registers: Registers,
+    memory: Memory,
+}
 
-pub enum MbcType {
+impl Gameboy {
+    fn reset_gb() -> Self {
+	Self {
+	    IME: false,
+	    registers: Registers::reset_registers(),
+	    memory: Memory::reset_memory(),
+	}
+    }
+}
+
+enum MbcType {
     RomOnly, 
     Mbc1,
     Mbc2,
@@ -82,11 +103,11 @@ pub enum MbcType {
     Unknown,
 }
 
-pub struct Cartridge {
-    pub rom: Vec<u8>,
-    pub ram: Vec<u8>,
-    pub mbc: MbcType,
-    pub current_bank: usize,
+struct Cartridge {
+    rom: Vec<u8>,
+    ram: Vec<u8>,
+    mbc: MbcType,
+    current_bank: usize,
 }
 
 impl Cartridge {
@@ -104,7 +125,6 @@ impl Cartridge {
 	    current_bank: 1,
 	})
     }
-
 }
 
 pub struct GameState {
@@ -113,6 +133,12 @@ pub struct GameState {
 }
 
 impl GameState {
+    pub fn start_game(path: &str) -> std::io::Result<Self> {
+	Ok(Self {
+	    gb: Gameboy::reset_gb(),
+	    cart: Cartridge::load_rom(path)?
+	})
+    }
 
     pub fn get_register8(&self, reg: Register) -> u8 {
 	0
@@ -241,6 +267,10 @@ impl GameState {
     pub fn write(&mut self, value: u8,  addr: u16) -> bool {
 	false
     }
+
+    pub fn set_interrupts(&mut self, on: bool) {
+	self.gb.IME = on;
+    } 
 
 }
 
