@@ -1,6 +1,10 @@
 // https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7 - reference manual
 
 use crate::state::{Flags, GameState, Register};
+
+// TODO Implement PC updates
+
+
 // Load instructions
 pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
     game_state.set_register8(r1, game_state.get_register8(r2));
@@ -679,6 +683,12 @@ pub fn swap_hladdr(game_state: &mut GameState) {
 }
 
 // TODO Control Flow
+pub fn jr_n16(game_state: &mut GameState) {
+    let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
+    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
+    let jump_addr = game_state.get_register16(Register::PC) + 3 + ((msb as u16) << 8) | (lsb as u16);
+    game_state.set_register16(Register::PC, jump_addr);
+}
 
 // Carry Flag
 pub fn ccf(game_state: &mut GameState)  {
@@ -765,6 +775,9 @@ pub fn ei(game_state: &mut GameState) {
 // TODO Misc
 pub fn daa(game_state: &mut GameState) {
 
+}
+
+pub fn stop(game_state: &mut GameState) {
 }
 
 // TODO HALT Implementation
