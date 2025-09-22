@@ -4,7 +4,7 @@ use crate::instructions::*;
 type InstructionWrapper = Box<dyn Fn(&mut GameState)>;
 
 struct Decoder {
-    non_prefix_opcodes: [InstructionWrapper; 128],
+    non_prefix_opcodes: [InstructionWrapper; 192],
     // cb_prefix_opcodes:  [InstructionWrapper; 256]
 }
 
@@ -148,6 +148,74 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::A)), // 0x7E
 		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::A)), // 0x7F
 		
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::B)), // 0x80
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::C)), // 0x81
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::D)), // 0x82
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::E)), // 0x83
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::H)), // 0x84
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::L)), // 0x85
+		Box::new(move |game_state: &mut GameState| add_a_hladdr(game_state)), // 0x86
+		Box::new(move |game_state: &mut GameState| add_a_r8(game_state, Register::A)), // 0x87
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::B)), // 0x88
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::C)), // 0x89
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::D)), // 0x8A
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::E)), // 0x8B
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::H)), // 0x8C
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::L)), // 0x8D
+		Box::new(move |game_state: &mut GameState| adc_a_hladdr(game_state)), // 0x8E
+		Box::new(move |game_state: &mut GameState| adc_a_r8(game_state, Register::A)), // 0x8F
+
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::B)), // 0x90
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::C)), // 0x91
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::D)), // 0x92
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::E)), // 0x93
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::H)), // 0x94
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::L)), // 0x95
+		Box::new(move |game_state: &mut GameState| sub_a_hladdr(game_state)), // 0x96
+		Box::new(move |game_state: &mut GameState| sub_a_r8(game_state, Register::A)), // 0x97
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::B)), // 0x98
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::C)), // 0x99
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::D)), // 0x9A
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::E)), // 0x9B
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::H)), // 0x9C
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::L)), // 0x9D
+		Box::new(move |game_state: &mut GameState| sbc_a_hladdr(game_state)), // 0x9E
+		Box::new(move |game_state: &mut GameState| sbc_a_r8(game_state, Register::A)), // 0x9F
+
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::B)), // 0xA0
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::C)), // 0xA1
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::D)), // 0xA2
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::E)), // 0xA3
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::H)), // 0xA4
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::L)), // 0xA5
+		Box::new(move |game_state: &mut GameState| and_a_hladdr(game_state)), // 0xA6
+		Box::new(move |game_state: &mut GameState| and_a_r8(game_state, Register::A)), // 0xA7
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::B)), // 0xA8
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::C)), // 0xA9
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::D)), // 0xAA
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::E)), // 0xAB
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::H)), // 0xAC
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::L)), // 0xAD
+		Box::new(move |game_state: &mut GameState| xor_a_hladdr(game_state)), // 0xAE
+		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::A)), // 0xAF
+
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::B)), // 0xA0
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::C)), // 0xA1
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::D)), // 0xA2
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::E)), // 0xA3
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::H)), // 0xA4
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::L)), // 0xA5
+		Box::new(move |game_state: &mut GameState| or_a_hladdr(game_state)), // 0xA6
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::A)), // 0xA7
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::B)), // 0xA8
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::C)), // 0xA9
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::D)), // 0xAA
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::E)), // 0xAB
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::H)), // 0xAC
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::L)), // 0xAD
+		Box::new(move |game_state: &mut GameState| cp_a_hladdr(game_state)), // 0xAE
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::A)), // 0xAF
+
 		// TODO Below
 	    ]
 	}
