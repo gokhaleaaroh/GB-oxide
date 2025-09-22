@@ -4,7 +4,7 @@ use crate::instructions::*;
 type InstructionWrapper = Box<dyn Fn(&mut GameState)>;
 
 struct Decoder {
-    non_prefix_opcodes: [InstructionWrapper; 208],
+    non_prefix_opcodes: [InstructionWrapper; 256],
     // cb_prefix_opcodes:  [InstructionWrapper; 256]
 }
 
@@ -218,7 +218,7 @@ impl Decoder {
 
 		Box::new(move |game_state: &mut GameState| ret_cc(game_state, true, true, false)), // 0xC0
 		Box::new(move |game_state: &mut GameState| pop_r16(game_state, Register::BC)), // 0xC1
-		Box::new(move |game_state: &mut GameState| jp_cc(game_state,true, true, false)), // 0xC2
+		Box::new(move |game_state: &mut GameState| jp_cc(game_state, true, true, false)), // 0xC2
 		Box::new(move |game_state: &mut GameState| jp_n16(game_state)), // 0xC3
 		Box::new(move |game_state: &mut GameState| call_cc(game_state, true, true, false)), // 0xC4
 		Box::new(move |game_state: &mut GameState| push_r16(game_state, Register::BC)), // 0xC5
@@ -233,7 +233,56 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| adc_a_n8(game_state)), // 0xCE
 		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x08)), // 0xCF
 
-		// TODO Below
+		Box::new(move |game_state: &mut GameState| ret_cc(game_state, false, true, true)), // 0xD0
+		Box::new(move |game_state: &mut GameState| pop_r16(game_state, Register::DE)), // 0xD1
+		Box::new(move |game_state: &mut GameState| jp_cc(game_state, false, true, true)), // 0xD2
+		Box::new(move |_: &mut GameState| {}), // 0xD3 Blank
+		Box::new(move |game_state: &mut GameState| call_cc(game_state, false, true, true)), // 0xD4
+		Box::new(move |game_state: &mut GameState| push_r16(game_state, Register::DE)), // 0xD5
+		Box::new(move |game_state: &mut GameState| sub_a_n8(game_state)), // 0xD6
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x10)), // 0xD7
+		Box::new(move |game_state: &mut GameState| ret_cc(game_state, false, false, true)), // 0xD8
+		Box::new(move |game_state: &mut GameState| reti(game_state)), // 0xD9
+		Box::new(move |game_state: &mut GameState| jp_cc(game_state, false, false, true)), // 0xDA
+		Box::new(move |_: &mut GameState| {}), // 0xDB Blank
+		Box::new(move |game_state: &mut GameState| call_cc(game_state, false, false, true)), // 0xDC
+		Box::new(move |_: &mut GameState| {}), // 0xDD Blank
+		Box::new(move |game_state: &mut GameState| sbc_a_n8(game_state)), // 0xDE
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x18)), // 0xDF
+
+		Box::new(move |game_state: &mut GameState| ldh_n16addr_a(game_state)), // 0xE0
+		Box::new(move |game_state: &mut GameState| pop_r16(game_state, Register::HL)), // 0xE1
+		Box::new(move |game_state: &mut GameState| ldh_caddr_a(game_state)), // 0xE2
+		Box::new(move |_: &mut GameState| {}), // 0xE3 Blank
+		Box::new(move |_: &mut GameState| {}), // 0xE4 Blank
+		Box::new(move |game_state: &mut GameState| push_r16(game_state, Register::HL)), // 0xE5
+		Box::new(move |game_state: &mut GameState| and_a_n8(game_state)), // 0xE6
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x20)), // 0xE7
+		Box::new(move |game_state: &mut GameState| add_sp_e8(game_state)), // 0xE8
+		Box::new(move |game_state: &mut GameState| jp_hl(game_state)), // 0xE9
+		Box::new(move |game_state: &mut GameState| ld_n16addr_a(game_state)), // 0xEA
+		Box::new(move |_: &mut GameState| {}), // 0xEB Blank
+		Box::new(move |_: &mut GameState| {}), // 0xEC Blank
+		Box::new(move |_: &mut GameState| {}), // 0xED Blank
+		Box::new(move |game_state: &mut GameState| xor_a_n8(game_state)), // 0xEE
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x28)), // 0xEF
+
+		Box::new(move |game_state: &mut GameState| ldh_a_n16addr(game_state)), // 0xF0
+		Box::new(move |game_state: &mut GameState| pop_r16(game_state, Register::AF)), // 0xF1
+		Box::new(move |game_state: &mut GameState| ldh_a_caddr(game_state)), // 0xF2
+		Box::new(move |game_state: &mut GameState| di(game_state)), // 0xF3 Blank
+		Box::new(move |_: &mut GameState| {}), // 0xF4 Blank
+		Box::new(move |game_state: &mut GameState| push_r16(game_state, Register::AF)), // 0xF5
+		Box::new(move |game_state: &mut GameState| or_a_n8(game_state)), // 0xF6
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x30)), // 0xF7
+		Box::new(move |game_state: &mut GameState| ld_hl_spe8(game_state)), // 0xF8
+		Box::new(move |game_state: &mut GameState| ld_sp_hl(game_state)), // 0xF9
+		Box::new(move |game_state: &mut GameState| ld_a_n16addr(game_state)), // 0xFA
+		Box::new(move |game_state: &mut GameState| ei(game_state)), // 0xFB Blank
+		Box::new(move |_: &mut GameState| {}), // 0xFC Blank
+		Box::new(move |_: &mut GameState| {}), // 0xFD Blank
+		Box::new(move |game_state: &mut GameState| cp_a_n8(game_state)), // 0xFE
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x38)), // 0xFF
 	    ]
 	}
     }

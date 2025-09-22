@@ -700,6 +700,10 @@ pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
     }
 }
 
+pub fn jp_hl(game_state: &mut GameState) {
+    game_state.set_register16(Register::PC, game_state.get_register16(Register::HL));
+}
+
 pub fn jp_n16(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
@@ -729,6 +733,11 @@ pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
 }
 
 pub fn ret(game_state: &mut GameState) {
+    pop_r16(game_state, Register::PC);
+}
+
+pub fn reti(game_state: &mut GameState) {
+    game_state.set_interrupts(true);
     pop_r16(game_state, Register::PC);
 }
 
@@ -798,7 +807,7 @@ pub fn add_sp_e8(game_state: &mut GameState) {
     game_state.set_register16(Register::SP, result);
 
     let new_flags = Flags{
-	Z: game_state.get_flags().Z,
+	Z: false,
 	N: false,
 	H: half_carry,
 	C: carry_out
@@ -813,6 +822,22 @@ pub fn dec_sp(game_state: &mut GameState) {
 
 pub fn inc_sp(game_state: &mut GameState) {
     game_state.set_register16(Register::SP, game_state.get_register16(Register::SP) + 1);
+}
+
+pub fn ld_hl_spe8(game_state: &mut GameState) {
+    let e = game_state.read(game_state.get_register16(Register::PC) + 1) as i8;
+    let (result, half_carry, carry_out) = add16_special(game_state.get_register16(Register::SP), e as i16 as u16);
+    game_state.set_register16(Register::SP, result);
+    game_state.set_register16(Register::HL, result);
+    
+    let new_flags = Flags{
+	Z: false,
+	N: false,
+	H: half_carry,
+	C: carry_out
+    };
+
+    game_state.set_flags(&new_flags);
 }
 
 pub fn ld_n16addr_sp(game_state: &mut GameState) {
@@ -832,6 +857,11 @@ pub fn ld_sp_n16addr(game_state: &mut GameState) {
     let val = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::SP, val);
 }
+
+pub fn ld_sp_hl(game_state: &mut GameState) {
+    game_state.set_register16(Register::SP, game_state.get_register16(Register::HL));
+}
+
 
 pub fn pop_r16(game_state: &mut GameState, r: Register) {
     
