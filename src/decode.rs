@@ -5,7 +5,7 @@ type InstructionWrapper = Box<dyn Fn(&mut GameState)>;
 
 struct Decoder {
     non_prefix_opcodes: [InstructionWrapper; 256],
-    // cb_prefix_opcodes:  [InstructionWrapper; 256]
+    cb_prefix_opcodes:  [InstructionWrapper; 16]
 }
 
 impl Decoder {
@@ -19,7 +19,7 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| inc_r8(game_state, Register::B)), // 0x04
 		Box::new(move |game_state: &mut GameState| dec_r8(game_state, Register::B)), // 0x05
 		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::B)), // 0x06
-		Box::new(move |game_state: &mut GameState| rlc_a(game_state)), // 0x07
+		Box::new(move |game_state: &mut GameState| rlca(game_state)), // 0x07
 		Box::new(move |game_state: &mut GameState| ld_n16addr_sp(game_state)), // 0x08
 		Box::new(move |game_state: &mut GameState| add_hl_r16(game_state, Register::BC)), // 0x09
 		Box::new(move |game_state: &mut GameState| ld_a_r16addr(game_state, Register::BC)), // 0x0A
@@ -283,7 +283,27 @@ impl Decoder {
 		Box::new(move |_: &mut GameState| {}), // 0xFD Blank
 		Box::new(move |game_state: &mut GameState| cp_a_n8(game_state)), // 0xFE
 		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x38)), // 0xFF
+	    ],
+	    cb_prefix_opcodes: [
+		Box::new(move |game_state: &mut GameState| rlc_r8(game_state, Register::B)), // 0x00
+		Box::new(move |game_state: &mut GameState| rlc_r8(game_state, Register::C)), // 0x01
+		Box::new(move |game_state: &mut GameState| rlc_r8(game_state, Register::D)), // 0x02
+		Box::new(move |game_state: &mut GameState| rlc_r8(game_state, Register::E)), // 0x03
+		Box::new(move |game_state: &mut GameState| rlc_r8(game_state, Register::H)), // 0x04
+		Box::new(move |game_state: &mut GameState| rlc_r8(game_state, Register::L)), // 0x05
+		Box::new(move |game_state: &mut GameState| rlc_hladdr(game_state)), // 0x06
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::A)), // 0x07
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::B)), // 0x08
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::C)), // 0x09
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::D)), // 0x0A
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::E)), // 0x0B
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::H)), // 0x0C
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::L)), // 0x0D
+		Box::new(move |game_state: &mut GameState| rrc_hladdr(game_state)), // 0x0E
+		Box::new(move |game_state: &mut GameState| rrc_r8(game_state, Register::A)), // 0x0F
+
 	    ]
+
 	}
     }
 

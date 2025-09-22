@@ -519,7 +519,7 @@ pub fn rlc_hladdr(game_state: &mut GameState) {
     game_state.write(result, addr);
 }
 
-pub fn rlc_a(game_state: &mut GameState) {
+pub fn rlca(game_state: &mut GameState) {
     let result = general_rlc(game_state, game_state.get_register8(Register::A), false);
     game_state.set_register8(Register::A, result);
 }
