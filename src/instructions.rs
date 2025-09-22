@@ -816,3 +816,5 @@ pub fn stop(game_state: &mut GameState) {
 }
 
 // TODO HALT Implementation
+pub fn halt(game_state: &mut GameState) {
+}

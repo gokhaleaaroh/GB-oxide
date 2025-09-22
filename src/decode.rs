@@ -4,7 +4,7 @@ use crate::instructions::*;
 type InstructionWrapper = Box<dyn Fn(&mut GameState)>;
 
 struct Decoder {
-    non_prefix_opcodes: [InstructionWrapper; 64],
+    non_prefix_opcodes: [InstructionWrapper; 128],
     // cb_prefix_opcodes:  [InstructionWrapper; 256]
 }
 
@@ -80,7 +80,75 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::A)), // 0x3E
 		Box::new(move |game_state: &mut GameState| ccf(game_state)), // 0x3F
 
-		// TODO below
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::B)), // 0x40
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::C)), // 0x41
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::D)), // 0x42
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::E)), // 0x43
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::H)), // 0x44
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::L)), // 0x45
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::B)), // 0x46
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::B, Register::A)), // 0x47
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::B)), // 0x48
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::C)), // 0x49
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::D)), // 0x4A
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::E)), // 0x4B
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::H)), // 0x4C
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::L)), // 0x4D
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::C)), // 0x4E
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::C, Register::A)), // 0x4F
+
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::B)), // 0x50
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::C)), // 0x51
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::D)), // 0x52
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::E)), // 0x53
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::H)), // 0x54
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::L)), // 0x55
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::D)), // 0x56
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::D, Register::A)), // 0x57
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::B)), // 0x58
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::C)), // 0x59
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::D)), // 0x5A
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::E)), // 0x5B
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::H)), // 0x5C
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::L)), // 0x5D
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::E)), // 0x5E
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::E, Register::A)), // 0x5F
+
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::B)), // 0x60
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::C)), // 0x61
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::D)), // 0x62
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::E)), // 0x63
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::H)), // 0x64
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::L)), // 0x65
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::H)), // 0x66
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::H, Register::A)), // 0x67
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::B)), // 0x68
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::C)), // 0x69
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::D)), // 0x6A
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::E)), // 0x6B
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::H)), // 0x6C
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::L)), // 0x6D
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::L)), // 0x6E
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::L, Register::A)), // 0x6F
+
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::B)), // 0x70
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::C)), // 0x71
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::D)), // 0x72
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::E)), // 0x73
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::H)), // 0x74
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::L)), // 0x75
+		Box::new(move |game_state: &mut GameState| halt(game_state)), // 0x76
+		Box::new(move |game_state: &mut GameState| ld_hladdr_r8(game_state, Register::A)), // 0x75
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::B)), // 0x78
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::C)), // 0x79
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::D)), // 0x7A
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::E)), // 0x7B
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::H)), // 0x7C
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::L)), // 0x7D
+		Box::new(move |game_state: &mut GameState| ld_r8_hladdr(game_state, Register::A)), // 0x7E
+		Box::new(move |game_state: &mut GameState| ld_r8_r8(game_state, Register::A, Register::A)), // 0x7F
+		
+		// TODO Below
 	    ]
 	}
     }
