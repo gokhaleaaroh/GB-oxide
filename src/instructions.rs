@@ -721,7 +721,7 @@ pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
 pub fn jr_n16(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
-    let jump_addr = ((game_state.get_register16(Register::PC) + 3) as u32 as i32) + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
+    let jump_addr = ((game_state.get_register16(Register::PC) + 3) as i32) + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
     game_state.set_register16(Register::PC, jump_addr as u16);
 }
 
