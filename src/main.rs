@@ -1,7 +1,7 @@
 use std::error::Error;
 mod state;
 mod instructions;
-mod decode;
+mod cpu;
 
 
 fn main() -> Result<(), Box<dyn Error>> {
