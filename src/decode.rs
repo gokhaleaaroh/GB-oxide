@@ -4,7 +4,7 @@ use crate::instructions::*;
 type InstructionWrapper = Box<dyn Fn(&mut GameState)>;
 
 struct Decoder {
-    non_prefix_opcodes: [InstructionWrapper; 192],
+    non_prefix_opcodes: [InstructionWrapper; 208],
     // cb_prefix_opcodes:  [InstructionWrapper; 256]
 }
 
@@ -46,7 +46,7 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::E)), // 0x1E
 		Box::new(move |game_state: &mut GameState| rr_a(game_state)), // 0x1F
 
-		Box::new(move |game_state: &mut GameState| jr_cc(game_state, true, true, false, false)), // 0x20
+		Box::new(move |game_state: &mut GameState| jr_cc(game_state, true, true, false)), // 0x20
 		Box::new(move |game_state: &mut GameState| ld_r16_n16(game_state, Register::HL)), // 0x21
 		Box::new(move |game_state: &mut GameState| ld_hliaddr_a(game_state)), // 0x22    
 		Box::new(move |game_state: &mut GameState| inc_r16(game_state, Register::HL)), // 0x23
@@ -54,7 +54,7 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| dec_r8(game_state, Register::H)), // 0x25
 		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::H)), // 0x26
 		Box::new(move |game_state: &mut GameState| daa(game_state)), // 0x27
-		Box::new(move |game_state: &mut GameState| jr_cc(game_state, true, false, false, false)), // 0x28
+		Box::new(move |game_state: &mut GameState| jr_cc(game_state, true, false, false)), // 0x28
 		Box::new(move |game_state: &mut GameState| add_hl_r16(game_state, Register::HL)), // 0x29
 		Box::new(move |game_state: &mut GameState| ld_a_hli(game_state)), // 0x2A
 		Box::new(move |game_state: &mut GameState| dec_r16(game_state, Register::HL)), // 0x2B
@@ -63,7 +63,7 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::L)), // 0x2E
 		Box::new(move |game_state: &mut GameState| cpl(game_state)), // 0x2F
 
-		Box::new(move |game_state: &mut GameState| jr_cc(game_state, false, true, false, true)), // 0x30
+		Box::new(move |game_state: &mut GameState| jr_cc(game_state, false, true, true)), // 0x30
 		Box::new(move |game_state: &mut GameState| ld_sp_n16addr(game_state)), // 0x31
 		Box::new(move |game_state: &mut GameState| ld_hldaddr_a(game_state)), // 0x32    
 		Box::new(move |game_state: &mut GameState| inc_sp(game_state)), // 0x33
@@ -71,7 +71,7 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| dec_hladdr(game_state)), // 0x35
 		Box::new(move |game_state: &mut GameState| ld_hladdr_n8(game_state)), // 0x36
 		Box::new(move |game_state: &mut GameState| scf(game_state)), // 0x37
-		Box::new(move |game_state: &mut GameState| jr_cc(game_state, false, false, false, true)), // 0x38
+		Box::new(move |game_state: &mut GameState| jr_cc(game_state, false, false, true)), // 0x38
 		Box::new(move |game_state: &mut GameState| add_hl_sp(game_state)), // 0x39
 		Box::new(move |game_state: &mut GameState| ld_a_hld(game_state)), // 0x3A
 		Box::new(move |game_state: &mut GameState| dec_sp(game_state)), // 0x3B
@@ -199,22 +199,39 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| xor_a_hladdr(game_state)), // 0xAE
 		Box::new(move |game_state: &mut GameState| xor_a_r8(game_state, Register::A)), // 0xAF
 
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::B)), // 0xA0
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::C)), // 0xA1
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::D)), // 0xA2
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::E)), // 0xA3
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::H)), // 0xA4
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::L)), // 0xA5
-		Box::new(move |game_state: &mut GameState| or_a_hladdr(game_state)), // 0xA6
-		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::A)), // 0xA7
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::B)), // 0xA8
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::C)), // 0xA9
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::D)), // 0xAA
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::E)), // 0xAB
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::H)), // 0xAC
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::L)), // 0xAD
-		Box::new(move |game_state: &mut GameState| cp_a_hladdr(game_state)), // 0xAE
-		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::A)), // 0xAF
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::B)), // 0xB0
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::C)), // 0xB1
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::D)), // 0xB2
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::E)), // 0xB3
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::H)), // 0xB4
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::L)), // 0xB5
+		Box::new(move |game_state: &mut GameState| or_a_hladdr(game_state)), // 0xB6
+		Box::new(move |game_state: &mut GameState| or_a_r8(game_state, Register::A)), // 0xB7
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::B)), // 0xB8
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::C)), // 0xB9
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::D)), // 0xBA
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::E)), // 0xBB
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::H)), // 0xBC
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::L)), // 0xBD
+		Box::new(move |game_state: &mut GameState| cp_a_hladdr(game_state)), // 0xBE
+		Box::new(move |game_state: &mut GameState| cp_a_r8(game_state, Register::A)), // 0xBF
+
+		Box::new(move |game_state: &mut GameState| ret_cc(game_state, true, true, false)), // 0xC0
+		Box::new(move |game_state: &mut GameState| pop_r16(game_state, Register::BC)), // 0xC1
+		Box::new(move |game_state: &mut GameState| jp_cc(game_state,true, true, false)), // 0xC2
+		Box::new(move |game_state: &mut GameState| jp_n16(game_state)), // 0xC3
+		Box::new(move |game_state: &mut GameState| call_cc(game_state, true, true, false)), // 0xC4
+		Box::new(move |game_state: &mut GameState| push_r16(game_state, Register::BC)), // 0xC5
+		Box::new(move |game_state: &mut GameState| add_a_n8(game_state)), // 0xC6
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x00)), // 0xC7
+		Box::new(move |game_state: &mut GameState| ret_cc(game_state, true, false, false)), // 0xC8
+		Box::new(move |game_state: &mut GameState| ret(game_state)), // 0xC9
+		Box::new(move |game_state: &mut GameState| jp_cc(game_state, true, false, false)), // 0xCA
+		Box::new(move |_: &mut GameState| {}), // 0xCB PREFIX!
+		Box::new(move |game_state: &mut GameState| call_cc(game_state, true, false, false)), // 0xCC
+		Box::new(move |game_state: &mut GameState| call_n16(game_state)), // 0xCD
+		Box::new(move |game_state: &mut GameState| adc_a_n8(game_state)), // 0xCE
+		Box::new(move |game_state: &mut GameState| rst_vec(game_state, 0x08)), // 0xCF
 
 		// TODO Below
 	    ]

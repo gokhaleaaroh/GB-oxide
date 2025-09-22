@@ -682,6 +682,38 @@ pub fn swap_hladdr(game_state: &mut GameState) {
 }
 
 // TODO Control Flow
+pub fn call_n16(game_state: &mut GameState) {
+    let next_addr = game_state.get_register16(Register::PC) + 3;
+    let lsb = (next_addr & 0x00FF) as u8;
+    let msb = (next_addr >> 8) as u8;
+    dec_sp(game_state);
+    game_state.write(msb,  game_state.get_register16(Register::SP));
+    dec_sp(game_state);
+    game_state.write(lsb,  game_state.get_register16(Register::SP));
+    jp_n16(game_state);
+}
+
+pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+    let flags = game_state.get_flags();
+    if ((n && z) && (flags.N && flags.Z)) || ((n && c) && (flags.N && flags.C)) || (z && flags.Z) || (c && flags.C) {
+	call_n16(game_state);
+    }
+}
+
+pub fn jp_n16(game_state: &mut GameState) {
+    let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
+    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
+    let jump_addr = ((msb as u16) << 8) | (lsb as u16);
+    game_state.set_register16(Register::PC, jump_addr);
+}
+
+pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+    let flags = game_state.get_flags();
+    if ((n && z) && (flags.N && flags.Z)) || ((n && c) && (flags.N && flags.C)) || (z && flags.Z) || (c && flags.C) {
+	jp_n16(game_state);
+    }
+}
+
 pub fn jr_n16(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
@@ -689,34 +721,37 @@ pub fn jr_n16(game_state: &mut GameState) {
     game_state.set_register16(Register::PC, jump_addr as u16);
 }
 
-pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, h: bool, c: bool) {
-    let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
-    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
-    let jump_addr = ((game_state.get_register16(Register::PC) + 3) as u32 as i32) + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
-
+pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
     let flags = game_state.get_flags();
-    if n && z {
-	if flags.N && flags.Z {
-	    game_state.set_register16(Register::PC, jump_addr as u16);
-	}
-    }
-    else if n && c {
-	if flags.N && flags.C {
-	    game_state.set_register16(Register::PC, jump_addr as u16);
-	}
-    }
-    else if z {
-	if flags.Z {
-	    game_state.set_register16(Register::PC, jump_addr as u16);
-	}
-    }
-    else if c {
-	if flags.C {
-	    game_state.set_register16(Register::PC, jump_addr as u16);
-	}
+    if ((n && z) && (flags.N && flags.Z)) || ((n && c) && (flags.N && flags.C)) || (z && flags.Z) || (c && flags.C) {
+	jr_n16(game_state);
     }
 }
 
+pub fn ret(game_state: &mut GameState) {
+    pop_r16(game_state, Register::PC);
+}
+
+pub fn ret_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+    let flags = game_state.get_flags();
+    if ((n && z) && (flags.N && flags.Z)) || ((n && c) && (flags.N && flags.C)) || (z && flags.Z) || (c && flags.C) {
+	ret(game_state);
+    }
+}
+
+pub fn rst_vec(game_state: &mut GameState, vec: u8) {
+    let next_addr = game_state.get_register16(Register::PC) + 1;
+    let n_lsb = (next_addr & 0x00FF) as u8;
+    let n_msb = (next_addr >> 8) as u8;
+    dec_sp(game_state);
+    game_state.write(n_msb,  game_state.get_register16(Register::SP));
+    dec_sp(game_state);
+    game_state.write(n_lsb,  game_state.get_register16(Register::SP));
+    let lsb = vec;
+    let msb = 0u8;
+    let jump_addr = ((msb as u16) << 8) | (lsb as u16);
+    game_state.set_register16(Register::PC, jump_addr);
+}
 
 // Carry Flag
 pub fn ccf(game_state: &mut GameState)  {
@@ -797,6 +832,15 @@ pub fn ld_sp_n16addr(game_state: &mut GameState) {
     let val = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::SP, val);
 }
+
+pub fn pop_r16(game_state: &mut GameState, r: Register) {
+    
+}
+
+pub fn push_r16(game_state: &mut GameState, r: Register) {
+
+}
+
 
 // Interrupts
 pub fn di(game_state: &mut GameState) {
