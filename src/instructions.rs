@@ -686,9 +686,38 @@ pub fn swap_hladdr(game_state: &mut GameState) {
 pub fn jr_n16(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
-    let jump_addr = game_state.get_register16(Register::PC) + 3 + ((msb as u16) << 8) | (lsb as u16);
-    game_state.set_register16(Register::PC, jump_addr);
+    let jump_addr = ((game_state.get_register16(Register::PC) + 3) as u32 as i32) + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
+    game_state.set_register16(Register::PC, jump_addr as u16);
 }
+
+pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, h: bool, c: bool) {
+    let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
+    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
+    let jump_addr = ((game_state.get_register16(Register::PC) + 3) as u32 as i32) + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
+
+    let flags = game_state.get_flags();
+    if n && z {
+	if flags.N && flags.Z {
+	    game_state.set_register16(Register::PC, jump_addr as u16);
+	}
+    }
+    else if n && c {
+	if flags.N && flags.C {
+	    game_state.set_register16(Register::PC, jump_addr as u16);
+	}
+    }
+    else if z {
+	if flags.Z {
+	    game_state.set_register16(Register::PC, jump_addr as u16);
+	}
+    }
+    else if c {
+	if flags.C {
+	    game_state.set_register16(Register::PC, jump_addr as u16);
+	}
+    }
+}
+
 
 // Carry Flag
 pub fn ccf(game_state: &mut GameState)  {
