@@ -4,7 +4,6 @@ use crate::state::{Flags, GameState, Register};
 
 // TODO Implement PC updates
 
-
 // Load instructions
 pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
     game_state.set_register8(r1, game_state.get_register8(r2));
@@ -792,6 +791,13 @@ pub fn ld_n16addr_sp(game_state: &mut GameState) {
     game_state.write(val2, addr + 1);
 }
 
+pub fn ld_sp_n16addr(game_state: &mut GameState) {
+    let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
+    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
+    let val = ((msb as u16) << 8) | (lsb as u16);
+    game_state.set_register16(Register::SP, val);
+}
+
 // Interrupts
 pub fn di(game_state: &mut GameState) {
     game_state.set_interrupts(false);
@@ -810,5 +816,3 @@ pub fn stop(game_state: &mut GameState) {
 }
 
 // TODO HALT Implementation
-
-

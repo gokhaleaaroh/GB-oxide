@@ -4,7 +4,7 @@ use crate::instructions::*;
 type InstructionWrapper = Box<dyn Fn(&mut GameState)>;
 
 struct Decoder {
-    non_prefix_opcodes: [InstructionWrapper; 48],
+    non_prefix_opcodes: [InstructionWrapper; 64],
     // cb_prefix_opcodes:  [InstructionWrapper; 256]
 }
 
@@ -62,6 +62,23 @@ impl Decoder {
 		Box::new(move |game_state: &mut GameState| dec_r8(game_state, Register::L)), // 0x2D
 		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::L)), // 0x2E
 		Box::new(move |game_state: &mut GameState| cpl(game_state)), // 0x2F
+
+		Box::new(move |game_state: &mut GameState| jr_cc(game_state, false, true, false, true)), // 0x30
+		Box::new(move |game_state: &mut GameState| ld_sp_n16addr(game_state)), // 0x31
+		Box::new(move |game_state: &mut GameState| ld_hldaddr_a(game_state)), // 0x32    
+		Box::new(move |game_state: &mut GameState| inc_sp(game_state)), // 0x33
+		Box::new(move |game_state: &mut GameState| inc_hladdr(game_state)), // 0x34
+		Box::new(move |game_state: &mut GameState| dec_hladdr(game_state)), // 0x35
+		Box::new(move |game_state: &mut GameState| ld_hladdr_n8(game_state)), // 0x36
+		Box::new(move |game_state: &mut GameState| scf(game_state)), // 0x37
+		Box::new(move |game_state: &mut GameState| jr_cc(game_state, false, false, false, true)), // 0x38
+		Box::new(move |game_state: &mut GameState| add_hl_sp(game_state)), // 0x39
+		Box::new(move |game_state: &mut GameState| ld_a_hld(game_state)), // 0x3A
+		Box::new(move |game_state: &mut GameState| dec_sp(game_state)), // 0x3B
+		Box::new(move |game_state: &mut GameState| inc_r8(game_state, Register::A)), // 0x3C
+		Box::new(move |game_state: &mut GameState| dec_r8(game_state, Register::A)), // 0x3D
+		Box::new(move |game_state: &mut GameState| ld_r8_n8(game_state, Register::A)), // 0x3E
+		Box::new(move |game_state: &mut GameState| ccf(game_state)), // 0x3F
 
 		// TODO below
 	    ]
