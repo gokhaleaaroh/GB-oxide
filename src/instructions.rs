@@ -447,7 +447,7 @@ pub fn res_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
     game_state.set_register8(r, game_state.get_register8(r) & !(1 << u));
 }
 
-pub fn res_u3_hladdr(game_state: &mut GameState, u: u8, r: Register) {
+pub fn res_u3_hladdr(game_state: &mut GameState, u: u8) {
     if u > 7 { return }
     let addr = game_state.get_register16(Register::HL);
     game_state.write(game_state.read(addr) & !(1 << u), addr);
@@ -458,7 +458,7 @@ pub fn set_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
     game_state.set_register8(r, game_state.get_register8(r) | (1 << u));
 }
 
-pub fn set_u3_hladdr(game_state: &mut GameState, u: u8, r: Register) {
+pub fn set_u3_hladdr(game_state: &mut GameState, u: u8) {
     if u > 7 { return }
     let addr = game_state.get_register16(Register::HL);
     game_state.write(game_state.read(addr) | (1 << u), addr);
@@ -601,7 +601,7 @@ pub fn sla_r8(game_state: &mut GameState, r: Register) {
     game_state.set_register8(r, result);
 }
 
-pub fn sla_hladdr(game_state: &mut GameState, r: Register) {
+pub fn sla_hladdr(game_state: &mut GameState) {
     let addr = game_state.get_register16(Register::HL);
     let result = general_sla(game_state, game_state.read(addr));
     game_state.write(result, addr);
@@ -626,7 +626,7 @@ pub fn sra_r8(game_state: &mut GameState, r: Register) {
     game_state.set_register8(r, result);
 }
 
-pub fn sra_hladdr(game_state: &mut GameState, r: Register) {
+pub fn sra_hladdr(game_state: &mut GameState) {
     let addr = game_state.get_register16(Register::HL);
     let result = general_sra(game_state, game_state.read(addr));
     game_state.write(result, addr);
@@ -646,11 +646,11 @@ fn general_srl(game_state: &mut GameState, val: u8) -> u8 {
 }
 
 pub fn srl_r8(game_state: &mut GameState, r: Register) {
-    let result = general_sla(game_state, game_state.get_register8(r));
+    let result = general_srl(game_state, game_state.get_register8(r));
     game_state.set_register8(r, result);
 }
 
-pub fn srl_hladdr(game_state: &mut GameState, r: Register) {
+pub fn srl_hladdr(game_state: &mut GameState) {
     let addr = game_state.get_register16(Register::HL);
     let result = general_srl(game_state, game_state.read(addr));
     game_state.write(result, addr);
