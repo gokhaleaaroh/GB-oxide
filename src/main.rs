@@ -1,11 +1,9 @@
 use std::error::Error;
-mod state;
-mod instructions;
 mod cpu;
-
+mod instructions;
+mod state;
 
 fn main() -> Result<(), Box<dyn Error>> {
-
     // let cart = state::Cartridge::load_rom("roms/tetris.gb")?;
     let lsb: u8 = 0x80;
     let msb: u8 = 0x3F;
