@@ -82,6 +82,7 @@ struct Gameboy {
     IME: bool,
     registers: Registers,
     memory: Memory,
+    pc_moved: bool
 }
 
 impl Gameboy {
@@ -90,6 +91,7 @@ impl Gameboy {
 	    IME: false,
 	    registers: Registers::reset_registers(),
 	    memory: Memory::reset_memory(),
+	    pc_moved: false
 	}
     }
 }
@@ -271,6 +273,14 @@ impl GameState {
     pub fn set_interrupts(&mut self, on: bool) {
 	self.gb.IME = on;
     } 
+
+    pub fn pc_moved(&mut self) -> bool {
+	self.gb.pc_moved
+    }
+
+    pub fn set_pc_moved(&mut self, val: bool) {
+	self.gb.pc_moved = false;
+    }
 
 }
 

@@ -702,6 +702,7 @@ pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
 
 pub fn jp_hl(game_state: &mut GameState) {
     game_state.set_register16(Register::PC, game_state.get_register16(Register::HL));
+    game_state.set_pc_moved(true);
 }
 
 pub fn jp_n16(game_state: &mut GameState) {
@@ -709,6 +710,7 @@ pub fn jp_n16(game_state: &mut GameState) {
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::PC, jump_addr);
+    game_state.set_pc_moved(true);
 }
 
 pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
@@ -723,6 +725,7 @@ pub fn jr_n16(game_state: &mut GameState) {
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let jump_addr = ((game_state.get_register16(Register::PC) + 3) as i32) + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
     game_state.set_register16(Register::PC, jump_addr as u16);
+    game_state.set_pc_moved(true);
 }
 
 pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
@@ -760,6 +763,7 @@ pub fn rst_vec(game_state: &mut GameState, vec: u8) {
     let msb = 0u8;
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::PC, jump_addr);
+    game_state.set_pc_moved(true);
 }
 
 // Carry Flag

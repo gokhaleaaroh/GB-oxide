@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::state::{GameState, Register};
 use crate::instructions::*;
 
@@ -5,11 +6,61 @@ type InstructionWrapper = fn(&mut GameState);
 
 pub struct CPU {
     non_prefix_opcodes: [InstructionWrapper; 256],
-    cb_prefix_opcodes:  [InstructionWrapper; 256]
+    cb_prefix_opcodes:  [InstructionWrapper; 256],
+    two_byte_ins: HashSet<u8>,
+    three_byte_ins: HashSet<u8>,
+	
 }
 
 impl CPU {
     pub fn initialize() -> Self {
+	let mut iibi: HashSet<u8> = HashSet::new();
+	iibi.insert(0x06);
+	iibi.insert(0x0E);
+	iibi.insert(0x16);
+	iibi.insert(0x18);
+	iibi.insert(0x1E);
+	iibi.insert(0x20);
+	iibi.insert(0x26);
+	iibi.insert(0x28);
+	iibi.insert(0x2E);
+	iibi.insert(0x30);
+	iibi.insert(0x36);
+	iibi.insert(0x38);
+	iibi.insert(0x3E);
+	iibi.insert(0xC6);
+	iibi.insert(0xCE);
+	iibi.insert(0xD6);
+	iibi.insert(0xDE);
+	iibi.insert(0xE0);
+	iibi.insert(0xE6);
+	iibi.insert(0xE8);
+	iibi.insert(0xEE);
+	iibi.insert(0xF0);
+	iibi.insert(0xF6);
+	iibi.insert(0xF8);
+	iibi.insert(0xFE);
+	iibi.insert(0xFE);
+
+	let mut iiibi: HashSet<u8> = HashSet::new();
+	iiibi.insert(0x01);
+	iiibi.insert(0x08);
+	iiibi.insert(0x11);
+	iiibi.insert(0x21);
+	iiibi.insert(0x31);
+	iiibi.insert(0xC2);
+	iiibi.insert(0xC3);
+	iiibi.insert(0xC4);
+	iiibi.insert(0xCA);
+	iiibi.insert(0xCC);
+	iiibi.insert(0xCD);
+	iiibi.insert(0xD2);
+	iiibi.insert(0xD4);
+	iiibi.insert(0xDA);
+	iiibi.insert(0xDC);
+	iiibi.insert(0xEA);
+	iiibi.insert(0xFA);
+
 	Self {
 	    non_prefix_opcodes: [
 		|_: &mut GameState| {}, // 0x00
@@ -558,23 +609,39 @@ impl CPU {
 		|s: &mut GameState| set_u3_r8(s, 7, Register::L), // 0xFD
 		|s: &mut GameState| set_u3_hladdr(s, 7), // 0xFE
 		|s: &mut GameState| set_u3_r8(s, 7, Register::A), // 0xFF
-	    ]
+	    ],
+
+	    two_byte_ins: iibi,
+
+	    three_byte_ins: iiibi
 	}
     }
 
     pub fn main_loop(&self, game_state: &mut GameState) {
-	let mut curr_PC = game_state.get_register16(Register::PC);
-	let mut next_instruction = game_state.read(curr_PC);
-	while  curr_PC <= 0xFFFF {
+	let mut next_instruction = game_state.read(game_state.get_register16(Register::PC););
+	while  true {
+	    let mut advance_amount = 1;
 	    if next_instruction != 0xCB {
 		(self.non_prefix_opcodes[next_instruction as usize])(game_state);
-		// TODO figure out PC update
+		if self.two_byte_ins.contains(&next_instruction) {
+		    advance_amount = 2;
+		} else if self.three_byte_ins.contains(&next_instruction) {
+		    advance_amount = 3;
+		} 
+
+		game_state.set_register16(Register::PC, curr_PC + advance_amount);
 	    } else {
 		(self.cb_prefix_opcodes[next_instruction as usize])(game_state);
-		game_state.set_register16(Register::PC, curr_PC + 2);
-		curr_PC += 2;
+		advance_amount = 2;
 	    }
-	}
 
+	    if game_state.pc_moved() {
+		advance_amount = 0;
+		game_state.set_pc_moved(false);
+	    }
+
+	    game_state.set_register16(Register::PC, curr_PC + advance_amount);
+	    next_instruction = game_state.read(game_state.get_register16(Register::PC));
+	}
     }
 }
