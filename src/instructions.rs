@@ -962,8 +962,29 @@ pub fn ei(game_state: &mut GameState) {
     game_state.set_interrupts(true);
 }
 
-// TODO Misc
-pub fn daa(game_state: &mut GameState) {}
+// Misc
+pub fn daa(game_state: &mut GameState) {
+    let flags = game_state.get_flags();
+
+    let mut adjustment: i16 = 0;
+    let a_val = game_state.get_register8(Register::A);
+    let mut new_flags = Flags{ Z: flags.Z, N: flags.N, H: false, C: flags.C};
+
+    if flags.N {
+	if flags.H { adjustment += 0x06 };
+	if flags.C { adjustment += 0x60 };
+    } else {
+	if flags.H || (a_val & 0x0F) > 0x09 { adjustment += 0x06; }
+	if flags.C || a_val > 0x99 {  adjustment += 0x60; new_flags.C = true }
+
+    }
+
+    let result = ((a_val as i16) - (adjustment)) as u16 as u8;
+    game_state.set_register8(Register::A, result);
+
+    if result == 0 { new_flags.Z = true; }
+    game_state.set_flags(&new_flags);
+}
 
 pub fn stop(game_state: &mut GameState) {}
 
