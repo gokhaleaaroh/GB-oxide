@@ -286,7 +286,7 @@ impl CPU {
                 |_: &mut GameState| {},                                    // 0xDD Blank
                 |s: &mut GameState| sbc_a_n8(s),                           // 0xDE
                 |s: &mut GameState| rst_vec(s, 0x18),                      // 0xDF
-                |s: &mut GameState| ldh_n16addr_a(s),                      // 0xE0
+                |s: &mut GameState| ldh_n8addr_a(s),                      // 0xE0
                 |s: &mut GameState| pop_r16(s, Register::HL),              // 0xE1
                 |s: &mut GameState| ldh_caddr_a(s),                        // 0xE2
                 |_: &mut GameState| {},                                    // 0xE3 Blank
@@ -302,7 +302,7 @@ impl CPU {
                 |_: &mut GameState| {},                                    // 0xED Blank
                 |s: &mut GameState| xor_a_n8(s),                           // 0xEE
                 |s: &mut GameState| rst_vec(s, 0x28),                      // 0xEF
-                |s: &mut GameState| ldh_a_n16addr(s),                      // 0xF0
+                |s: &mut GameState| ldh_a_n8addr(s),                      // 0xF0
                 |s: &mut GameState| pop_r16(s, Register::AF),              // 0xF1
                 |s: &mut GameState| ldh_a_caddr(s),                        // 0xF2
                 |s: &mut GameState| di(s),                                 // 0xF3 Blank
@@ -590,7 +590,7 @@ impl CPU {
         let mut curr_PC = game_state.get_register16(Register::PC);
         let mut next_instruction = game_state.read(curr_PC);
 
-        for _ in 0..10 {
+        for _ in 0..20 {
             let mut advance_amount = 1;
             if next_instruction != 0xCB {
 		println!("Non-prefix instruction: {:02X}", next_instruction);
@@ -610,7 +610,7 @@ impl CPU {
             if game_state.pc_moved() {
                 advance_amount = 0;
                 game_state.set_pc_moved(false);
-		println!("New PC: {:02X}", game_state.get_register16(Register::PC));
+		println!("New PC: 0x{:04X}", game_state.get_register16(Register::PC));
             } 
 
             // it is possible for curr_PC and Register::PC to disagree at this point

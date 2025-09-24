@@ -51,13 +51,10 @@ pub fn ld_n16addr_a(game_state: &mut GameState) {
     game_state.write(game_state.get_register8(Register::A), addr);
 }
 
-pub fn ldh_n16addr_a(game_state: &mut GameState) {
+pub fn ldh_n8addr_a(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
-    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
-    let addr = ((msb as u16) << 8) | (lsb as u16);
-    if 0xFF00 <= addr {
-        game_state.write(game_state.get_register8(Register::A), addr);
-    }
+    let addr = 0xFF00 | (lsb as u16);
+    game_state.write(game_state.get_register8(Register::A), addr);
 }
 
 pub fn ldh_caddr_a(game_state: &mut GameState) {
@@ -78,13 +75,10 @@ pub fn ld_a_n16addr(game_state: &mut GameState) {
     game_state.set_register8(Register::A, game_state.read(addr));
 }
 
-pub fn ldh_a_n16addr(game_state: &mut GameState) {
+pub fn ldh_a_n8addr(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
-    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
-    let addr = ((msb as u16) << 8) | (lsb as u16);
-    if 0xFF00 <= addr {
-        game_state.set_register8(Register::A, game_state.read(addr));
-    }
+    let addr = 0xFF00 | (lsb as u16);
+    game_state.set_register8(Register::A, game_state.read(addr));
 }
 
 pub fn ldh_a_caddr(game_state: &mut GameState) {
@@ -215,7 +209,7 @@ pub fn add_hl_r16(game_state: &mut GameState, r: Register) {
 
 // 8-bit difference, bit 4 borrow, final borrow
 fn sub8(a: u8, b: u8, carry_in: u8) -> (u8, bool, bool) {
-    let result = (a as u16) - (b as u16);
+    let result = ((a as i16) - (b as i16)) as u16;
 
     let half_borrow = (a & 0xF) < (b & 0xF) + carry_in;
     let borrow = (a as u16) < (b as u16 + carry_in as u16);
@@ -775,9 +769,7 @@ pub fn jp_n16(game_state: &mut GameState) {
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
     println!("Jumping to 0x{:04X}", jump_addr);
     game_state.set_register16(Register::PC, jump_addr);
-    println!("New Instruction: 0x{:02X}", game_state.read(jump_addr));
     game_state.set_pc_moved(true);
-    println!("here pc moved is set: {}", game_state.pc_moved());
 }
 
 pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {

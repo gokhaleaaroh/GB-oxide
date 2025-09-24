@@ -220,19 +220,27 @@ impl GameState {
     pub fn set_flags(&mut self, flags: &Flags) {
         if flags.Z {
             self.gb.registers.f |= FLAG_Z;
-        }
+        } else {
+	    self.gb.registers.f &= !FLAG_Z;
+	}
 
         if flags.N {
             self.gb.registers.f |= FLAG_N;
-        }
+        } else {
+	    self.gb.registers.f &= !FLAG_N;
+	}
 
         if flags.H {
             self.gb.registers.f |= FLAG_H;
-        }
+        } else {
+	    self.gb.registers.f &= !FLAG_H;
+	}
 
         if flags.C {
             self.gb.registers.f |= FLAG_C;
-        }
+        } else {
+	    self.gb.registers.f &= !FLAG_C;
+	}
     }
 
     pub fn get_flags(&self) -> Flags {
