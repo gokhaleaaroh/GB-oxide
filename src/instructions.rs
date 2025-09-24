@@ -2,8 +2,6 @@
 
 use crate::state::{Flags, GameState, Register};
 
-// TODO Implement PC updates
-
 // Load instructions
 pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
     game_state.set_register8(r1, game_state.get_register8(r2));
@@ -735,7 +733,6 @@ pub fn swap_hladdr(game_state: &mut GameState) {
     game_state.write(result, addr);
 }
 
-// TODO Control Flow
 pub fn call_n16(game_state: &mut GameState) {
     let next_addr = game_state.get_register16(Register::PC) + 3;
     let lsb = (next_addr & 0x00FF) as u8;
@@ -767,7 +764,6 @@ pub fn jp_n16(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
-    println!("Jumping to 0x{:04X}", jump_addr);
     game_state.set_register16(Register::PC, jump_addr);
     game_state.set_pc_moved(true);
 }
@@ -861,8 +857,6 @@ pub fn scf(game_state: &mut GameState) {
     game_state.set_flags(&new_flags);
 }
 
-// TODO Stack Manipulation
-
 pub fn add_hl_sp(game_state: &mut GameState) {
     add_hl_r16(game_state, Register::SP);
 }
@@ -940,9 +934,24 @@ pub fn ld_sp_hl(game_state: &mut GameState) {
     game_state.set_register16(Register::SP, game_state.get_register16(Register::HL));
 }
 
-pub fn pop_r16(game_state: &mut GameState, r: Register) {}
+pub fn pop_r16(game_state: &mut GameState, r: Register) {
+    let lsb = game_state.read(game_state.get_register16(Register::SP));
+    inc_sp(game_state);
+    let msb = game_state.read(game_state.get_register16(Register::SP));
+    inc_sp(game_state);
+    let val = ((msb as u16) << 8) | (lsb as u16);
+    game_state.set_register16(r, val);
+}
 
-pub fn push_r16(game_state: &mut GameState, r: Register) {}
+pub fn push_r16(game_state: &mut GameState, r: Register) {
+    let reg_val = game_state.get_register16(r);
+    let lsb = (reg_val & 0x00FF) as u8;
+    let msb = (reg_val >> 8) as u8;
+    dec_sp(game_state);
+    game_state.write(msb, game_state.get_register16(Register::SP));
+    dec_sp(game_state);
+    game_state.write(lsb, game_state.get_register16(Register::SP));
+}
 
 // Interrupts
 pub fn di(game_state: &mut GameState) {
