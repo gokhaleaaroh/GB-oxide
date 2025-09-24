@@ -272,8 +272,27 @@ impl GameState {
         }
     }
 
-    pub fn write(&mut self, value: u8, addr: u16) -> bool {
-        false
+    pub fn write(&mut self, value: u8, addr: u16) {
+        match addr {
+            0x0000..=0x7FFF => (), // Read-Only!
+
+            0x8000..=0x9FFF => self.gb.memory.vram[addr as usize - 0x8000] = value,
+
+            0xA000..=0xBFFF => {
+                // TODO External RAM
+		()
+            }
+
+            0xC000..=0xDFFF => self.gb.memory.wram[addr as usize - 0xC000] = value,
+
+            0xE000..=0xFDFF => self.gb.memory.wram[addr as usize - 0xE000] = value,
+
+            0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
+
+            0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
+
+            _ => (),
+        }
     }
 
     pub fn set_interrupts(&mut self, on: bool) {
