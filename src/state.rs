@@ -1,5 +1,9 @@
 use std::fs;
 
+fn generate_16bit(lsb: u8, msb: u8) -> u16 {
+    ((msb as u16) << 8) | (lsb as u16)
+}
+
 #[derive(Copy, Clone, Debug)]
 pub enum Register {
     A,
@@ -143,31 +147,43 @@ impl GameState {
     }
 
     pub fn get_register8(&self, reg: Register) -> u8 {
-        0
+	match reg {
+            Register::A => self.gb.registers.a,
+            Register::F => self.gb.registers.f,
+            Register::B => self.gb.registers.b,
+            Register::C => self.gb.registers.c,
+            Register::D => self.gb.registers.d,
+            Register::E => self.gb.registers.e,
+            Register::H => self.gb.registers.h,
+            Register::L => self.gb.registers.l,
+            _ => 0,
+        }
     }
 
+
     pub fn get_register16(&self, reg: Register) -> u16 {
-        0
+        match reg {
+            Register::AF => generate_16bit(self.get_register8(Register::F), self.get_register8(Register::A)),
+            Register::BC => generate_16bit(self.get_register8(Register::C), self.get_register8(Register::B)),
+            Register::DE => generate_16bit(self.get_register8(Register::E), self.get_register8(Register::D)),
+            Register::HL => generate_16bit(self.get_register8(Register::L), self.get_register8(Register::H)),
+            Register::PC => self.gb.registers.pc,
+            Register::SP => self.gb.registers.sp,
+            _ => 0,
+        }
+
     }
 
     pub fn set_register8(&mut self, reg: Register, val: u8) {
         match reg {
             Register::A => self.gb.registers.a = val,
-
             Register::F => self.gb.registers.f = val,
-
             Register::B => self.gb.registers.b = val,
-
             Register::C => self.gb.registers.c = val,
-
             Register::D => self.gb.registers.d = val,
-
             Register::E => self.gb.registers.e = val,
-
             Register::H => self.gb.registers.h = val,
-
             Register::L => self.gb.registers.l = val,
-
             _ => (),
         }
     }
@@ -195,7 +211,7 @@ impl GameState {
             }
 
             Register::PC => self.gb.registers.pc = val,
-            Register::SP => self.gb.registers.pc = val,
+            Register::SP => self.gb.registers.sp = val,
 
             _ => (),
         }
@@ -269,6 +285,6 @@ impl GameState {
     }
 
     pub fn set_pc_moved(&mut self, val: bool) {
-        self.gb.pc_moved = false;
+        self.gb.pc_moved = val;
     }
 }

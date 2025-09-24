@@ -773,8 +773,11 @@ pub fn jp_n16(game_state: &mut GameState) {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
+    println!("Jumping to 0x{:04X}", jump_addr);
     game_state.set_register16(Register::PC, jump_addr);
+    println!("New Instruction: 0x{:02X}", game_state.read(jump_addr));
     game_state.set_pc_moved(true);
+    println!("here pc moved is set: {}", game_state.pc_moved());
 }
 
 pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {

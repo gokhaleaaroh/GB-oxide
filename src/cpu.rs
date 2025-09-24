@@ -328,7 +328,7 @@ impl CPU {
                 |s: &mut GameState| rlc_r8(s, Register::H),       // 0x04
                 |s: &mut GameState| rlc_r8(s, Register::L),       // 0x05
                 |s: &mut GameState| rlc_hladdr(s),                // 0x06
-                |s: &mut GameState| rrc_r8(s, Register::A),       // 0x07
+                |s: &mut GameState| rlc_r8(s, Register::A),       // 0x07
                 |s: &mut GameState| rrc_r8(s, Register::B),       // 0x08
                 |s: &mut GameState| rrc_r8(s, Register::C),       // 0x09
                 |s: &mut GameState| rrc_r8(s, Register::D),       // 0x0A
@@ -344,7 +344,7 @@ impl CPU {
                 |s: &mut GameState| rl_r8(s, Register::H),        // 0x14
                 |s: &mut GameState| rl_r8(s, Register::L),        // 0x15
                 |s: &mut GameState| rl_hladdr(s),                 // 0x16
-                |s: &mut GameState| rr_r8(s, Register::A),        // 0x17
+                |s: &mut GameState| rl_r8(s, Register::A),        // 0x17
                 |s: &mut GameState| rr_r8(s, Register::B),        // 0x18
                 |s: &mut GameState| rr_r8(s, Register::C),        // 0x19
                 |s: &mut GameState| rr_r8(s, Register::D),        // 0x1A
@@ -360,7 +360,7 @@ impl CPU {
                 |s: &mut GameState| sla_r8(s, Register::H),       // 0x24
                 |s: &mut GameState| sla_r8(s, Register::L),       // 0x25
                 |s: &mut GameState| sla_hladdr(s),                // 0x26
-                |s: &mut GameState| sra_r8(s, Register::A),       // 0x27
+                |s: &mut GameState| sla_r8(s, Register::A),       // 0x27
                 |s: &mut GameState| sra_r8(s, Register::B),       // 0x28
                 |s: &mut GameState| sra_r8(s, Register::C),       // 0x29
                 |s: &mut GameState| sra_r8(s, Register::D),       // 0x2A
@@ -589,28 +589,32 @@ impl CPU {
     pub fn main_loop(&self, game_state: &mut GameState) {
         let mut curr_PC = game_state.get_register16(Register::PC);
         let mut next_instruction = game_state.read(curr_PC);
-        while true {
+
+        for _ in 0..10 {
             let mut advance_amount = 1;
             if next_instruction != 0xCB {
+		println!("Non-prefix instruction: {:02X}", next_instruction);
                 (self.non_prefix_opcodes[next_instruction as usize])(game_state);
                 if self.two_byte_ins.contains(&next_instruction) {
                     advance_amount = 2;
                 } else if self.three_byte_ins.contains(&next_instruction) {
                     advance_amount = 3;
                 }
-
-                game_state.set_register16(Register::PC, curr_PC + advance_amount);
             } else {
-                (self.cb_prefix_opcodes[next_instruction as usize])(game_state);
+		let actual_ins = game_state.read(curr_PC + 1);
+		println!("CB-prefix instruction: {:02X}", actual_ins);
+                (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
                 advance_amount = 2;
             }
 
             if game_state.pc_moved() {
                 advance_amount = 0;
                 game_state.set_pc_moved(false);
-            }
+		println!("New PC: {:02X}", game_state.get_register16(Register::PC));
+            } 
 
             // it is possible for curr_PC and Register::PC to disagree at this point
+	    println!("advance amount: {}", advance_amount);
             curr_PC = game_state.get_register16(Register::PC) + advance_amount;
             game_state.set_register16(Register::PC, curr_PC);
             next_instruction = game_state.read(curr_PC);
