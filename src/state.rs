@@ -87,6 +87,7 @@ struct Gameboy {
     registers: Registers,
     memory: Memory,
     pc_moved: bool,
+    cycles: u128,
 }
 
 impl Gameboy {
@@ -96,6 +97,7 @@ impl Gameboy {
             registers: Registers::reset_registers(),
             memory: Memory::reset_memory(),
             pc_moved: false,
+	    cycles: 0
         }
     }
 }
@@ -313,5 +315,9 @@ impl GameState {
 
     pub fn set_pc_moved(&mut self, val: bool) {
         self.gb.pc_moved = val;
+    }
+
+    pub fn update_clock(&mut self, add_cycles: u8) {
+	self.gb.cycles += add_cycles as u128;
     }
 }

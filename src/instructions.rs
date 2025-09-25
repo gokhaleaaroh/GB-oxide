@@ -3,107 +3,135 @@
 use crate::state::{Flags, GameState, Register};
 
 // Load instructions
-pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) {
+pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) -> u8 {
     game_state.set_register8(r1, game_state.get_register8(r2));
+    1
 }
 
-pub fn ld_r8_n8(game_state: &mut GameState, r1: Register) {
+pub fn ld_r8_n8(game_state: &mut GameState, r1: Register) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     game_state.set_register8(r1, val);
+    2
 }
 
-pub fn ld_r16_n16(game_state: &mut GameState, r1: Register) {
+pub fn ld_r16_n16(game_state: &mut GameState, r1: Register) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let val = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(r1, val);
+    2
 }
 
-pub fn ld_hladdr_r8(game_state: &mut GameState, r: Register) {
+pub fn ld_hladdr_r8(game_state: &mut GameState, r: Register) -> u8 {
     game_state.write(
         game_state.get_register8(r),
         game_state.get_register16(Register::HL),
     );
+
+    2
 }
 
-pub fn ld_hladdr_n8(game_state: &mut GameState) {
+pub fn ld_hladdr_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     game_state.write(val, game_state.get_register16(Register::HL));
+
+    3
 }
 
-pub fn ld_r8_hladdr(game_state: &mut GameState, r: Register) {
+pub fn ld_r8_hladdr(game_state: &mut GameState, r: Register) -> u8 {
     game_state.set_register8(r, game_state.read(game_state.get_register16(Register::HL)));
+
+    2
 }
 
-pub fn ld_r16addr_a(game_state: &mut GameState, r: Register) {
+pub fn ld_r16addr_a(game_state: &mut GameState, r: Register) -> u8 {
     game_state.write(
         game_state.get_register8(Register::A),
         game_state.get_register16(r),
     );
+
+    2
 }
 
-pub fn ld_n16addr_a(game_state: &mut GameState) {
+pub fn ld_n16addr_a(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let addr = ((msb as u16) << 8) | (lsb as u16);
     game_state.write(game_state.get_register8(Register::A), addr);
+
+    4
 }
 
-pub fn ldh_n8addr_a(game_state: &mut GameState) {
+pub fn ldh_n8addr_a(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let addr = 0xFF00 | (lsb as u16);
     game_state.write(game_state.get_register8(Register::A), addr);
+
+    3
 }
 
-pub fn ldh_caddr_a(game_state: &mut GameState) {
+pub fn ldh_caddr_a(game_state: &mut GameState) -> u8 {
     game_state.write(
         game_state.get_register8(Register::A),
         0xFF00 + game_state.get_register8(Register::C) as u16,
     );
+
+    2
 }
 
-pub fn ld_a_r16addr(game_state: &mut GameState, r: Register) {
+pub fn ld_a_r16addr(game_state: &mut GameState, r: Register) -> u8 {
     game_state.set_register8(Register::A, game_state.read(game_state.get_register16(r)));
+
+    2
 }
 
-pub fn ld_a_n16addr(game_state: &mut GameState) {
+pub fn ld_a_n16addr(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let addr = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register8(Register::A, game_state.read(addr));
+    4
 }
 
-pub fn ldh_a_n8addr(game_state: &mut GameState) {
+pub fn ldh_a_n8addr(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let addr = 0xFF00 | (lsb as u16);
     game_state.set_register8(Register::A, game_state.read(addr));
+    3
 }
 
-pub fn ldh_a_caddr(game_state: &mut GameState) {
+pub fn ldh_a_caddr(game_state: &mut GameState) -> u8 {
     game_state.set_register8(
         Register::A,
         game_state.read(game_state.get_register8(Register::C) as u16 + 0xFF00),
     );
+
+    2
 }
 
-pub fn ld_hliaddr_a(game_state: &mut GameState) {
+pub fn ld_hliaddr_a(game_state: &mut GameState) -> u8 {
     ld_hladdr_r8(game_state, Register::A);
     game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) + 1);
+
+    2
 }
 
-pub fn ld_hldaddr_a(game_state: &mut GameState) {
+pub fn ld_hldaddr_a(game_state: &mut GameState) -> u8 {
     ld_hladdr_r8(game_state, Register::A);
     game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
+
+    2
 }
 
-pub fn ld_a_hld(game_state: &mut GameState) {
-    ld_a_r16addr(game_state, Register::HL);
+pub fn ld_a_hld(game_state: &mut GameState) -> u8 { ld_a_r16addr(game_state, Register::HL);
     game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
+    2
 }
 
-pub fn ld_a_hli(game_state: &mut GameState) {
+pub fn ld_a_hli(game_state: &mut GameState) -> u8 {
     ld_a_r16addr(game_state, Register::HL);
     game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) + 1);
+    2
 }
 
 // Arithmetic
@@ -142,38 +170,44 @@ fn general_add_a_n8(game_state: &mut GameState, val: u8, carry_on: bool) {
     game_state.set_flags(&new_flags);
 }
 
-pub fn adc_a_r8(game_state: &mut GameState, r: Register) {
+pub fn adc_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     general_add_a_n8(game_state, game_state.get_register8(r), true);
+    1
 }
 
-pub fn adc_a_hladdr(game_state: &mut GameState) {
+pub fn adc_a_hladdr(game_state: &mut GameState) -> u8 {
     general_add_a_n8(
         game_state,
         game_state.read(game_state.get_register16(Register::HL)),
         true,
     );
+    2
 }
 
-pub fn adc_a_n8(game_state: &mut GameState) {
+pub fn adc_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     general_add_a_n8(game_state, val, true);
+    2
 }
 
-pub fn add_a_r8(game_state: &mut GameState, r: Register) {
+pub fn add_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     general_add_a_n8(game_state, game_state.get_register8(r), false);
+    1
 }
 
-pub fn add_a_hladdr(game_state: &mut GameState) {
+pub fn add_a_hladdr(game_state: &mut GameState) -> u8 {
     general_add_a_n8(
         game_state,
         game_state.read(game_state.get_register16(Register::HL)),
         false,
     );
+    2
 }
 
-pub fn add_a_n8(game_state: &mut GameState) {
+pub fn add_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     general_add_a_n8(game_state, val, false);
+    2
 }
 
 // returns 16-bit sum value, bit 11 overflow, and bit 15 overflow
@@ -186,7 +220,7 @@ fn add16(a: u16, b: u16) -> (u16, bool, bool) {
     (sum as u16, half_carry, carry_out)
 }
 
-pub fn add_hl_r16(game_state: &mut GameState, r: Register) {
+pub fn add_hl_r16(game_state: &mut GameState, r: Register) -> u8 {
     let (result, half_carry, carry_out) = add16(
         game_state.get_register16(Register::HL),
         game_state.get_register16(r),
@@ -201,6 +235,7 @@ pub fn add_hl_r16(game_state: &mut GameState, r: Register) {
     };
 
     game_state.set_flags(&new_flags);
+    2
 }
 
 // Subtract Instructions
@@ -237,63 +272,72 @@ fn general_sub_a_n8(game_state: &mut GameState, val: u8, borrow_on: bool, discar
     game_state.set_flags(&new_flags);
 }
 
-pub fn sbc_a_r8(game_state: &mut GameState, r: Register) {
+pub fn sbc_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     general_sub_a_n8(game_state, game_state.get_register8(r), true, false);
+    1
 }
 
-pub fn sbc_a_hladdr(game_state: &mut GameState) {
+pub fn sbc_a_hladdr(game_state: &mut GameState) -> u8 {
     general_sub_a_n8(
         game_state,
         game_state.read(game_state.get_register16(Register::HL)),
         true,
         false,
     );
+    2
 }
 
-pub fn sbc_a_n8(game_state: &mut GameState) {
+pub fn sbc_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     general_sub_a_n8(game_state, val, true, false);
+    2
 }
 
-pub fn sub_a_r8(game_state: &mut GameState, r: Register) {
+pub fn sub_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     general_sub_a_n8(game_state, game_state.get_register8(r), false, false);
+    1
 }
 
-pub fn sub_a_hladdr(game_state: &mut GameState) {
+pub fn sub_a_hladdr(game_state: &mut GameState) -> u8 {
     general_sub_a_n8(
         game_state,
         game_state.read(game_state.get_register16(Register::HL)),
         false,
         false,
     );
+    2
 }
 
-pub fn sub_a_n8(game_state: &mut GameState) {
+pub fn sub_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     general_sub_a_n8(game_state, val, false, false);
+    2
 }
 
 // Compare Instructions
-pub fn cp_a_r8(game_state: &mut GameState, r: Register) {
+pub fn cp_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     general_sub_a_n8(game_state, game_state.get_register8(r), false, true);
+    1
 }
 
-pub fn cp_a_hladdr(game_state: &mut GameState) {
+pub fn cp_a_hladdr(game_state: &mut GameState) -> u8 {
     general_sub_a_n8(
         game_state,
         game_state.read(game_state.get_register16(Register::HL)),
         false,
         true,
     );
+    2
 }
 
-pub fn cp_a_n8(game_state: &mut GameState) {
+pub fn cp_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     general_sub_a_n8(game_state, val, false, true);
+    2
 }
 
 // Decrease Instructions
-pub fn dec_r8(game_state: &mut GameState, r: Register) {
+pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
     let (result, half_borrow, _) = sub8(game_state.get_register8(r), 1, 0);
     game_state.set_register8(r, result);
 
@@ -305,9 +349,10 @@ pub fn dec_r8(game_state: &mut GameState, r: Register) {
     };
 
     game_state.set_flags(&new_flags);
+    1
 }
 
-pub fn dec_hladdr(game_state: &mut GameState) {
+pub fn dec_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let (result, half_borrow, _) = sub8(game_state.read(addr), 1, 0);
     game_state.write(result, addr);
@@ -320,14 +365,16 @@ pub fn dec_hladdr(game_state: &mut GameState) {
     };
 
     game_state.set_flags(&new_flags);
+    3
 }
 
-pub fn dec_r16(game_state: &mut GameState, r: Register) {
+pub fn dec_r16(game_state: &mut GameState, r: Register) -> u8 {
     game_state.set_register16(r, game_state.get_register16(r) - (1 as u16));
+    2
 }
 
 // Increase Instructions
-pub fn inc_r8(game_state: &mut GameState, r: Register) {
+pub fn inc_r8(game_state: &mut GameState, r: Register) -> u8 {
     let (result, half_carry, _) = add8(game_state.get_register8(r), 1, 0);
 
     game_state.set_register8(r, result);
@@ -340,9 +387,10 @@ pub fn inc_r8(game_state: &mut GameState, r: Register) {
     };
 
     game_state.set_flags(&new_flags);
+    1
 }
 
-pub fn inc_hladdr(game_state: &mut GameState) {
+pub fn inc_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let (result, half_carry, _) = add8(game_state.read(addr), 1, 0);
     game_state.write(result, addr);
@@ -355,10 +403,12 @@ pub fn inc_hladdr(game_state: &mut GameState) {
     };
 
     game_state.set_flags(&new_flags);
+    3
 }
 
-pub fn inc_r16(game_state: &mut GameState, r: Register) {
+pub fn inc_r16(game_state: &mut GameState, r: Register) -> u8 {
     game_state.set_register16(r, game_state.get_register16(r) + (1 as u16));
+    2
 }
 
 // Bitwise Logic
@@ -375,24 +425,27 @@ fn general_and_a(game_state: &mut GameState, val: u8) -> u8 {
     result
 }
 
-pub fn and_a_r8(game_state: &mut GameState, r: Register) {
+pub fn and_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_and_a(game_state, game_state.get_register8(r));
     game_state.set_register8(Register::A, result);
+    1
 }
 
-pub fn and_a_hladdr(game_state: &mut GameState) {
+pub fn and_a_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_and_a(game_state, game_state.read(addr));
     game_state.write(result, addr);
+    2
 }
 
-pub fn and_a_n8(game_state: &mut GameState) {
+pub fn and_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     let result = general_and_a(game_state, val);
     game_state.set_register8(Register::A, result);
+    2
 }
 
-pub fn cpl(game_state: &mut GameState) {
+pub fn cpl(game_state: &mut GameState) -> u8 {
     game_state.set_register8(Register::A, !game_state.get_register8(Register::A));
 
     let old_flags = game_state.get_flags();
@@ -405,6 +458,7 @@ pub fn cpl(game_state: &mut GameState) {
     };
 
     game_state.set_flags(&new_flags);
+    1
 }
 
 fn general_or_a(game_state: &mut GameState, val: u8, exclusive: bool) -> u8 {
@@ -421,45 +475,48 @@ fn general_or_a(game_state: &mut GameState, val: u8, exclusive: bool) -> u8 {
     result
 }
 
-pub fn or_a_r8(game_state: &mut GameState, r: Register) {
+pub fn or_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_or_a(game_state, game_state.get_register8(r), false);
     game_state.set_register8(Register::A, result);
+    1
 }
 
-pub fn or_a_hladdr(game_state: &mut GameState) {
+pub fn or_a_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_or_a(game_state, game_state.read(addr), false);
     game_state.write(result, addr);
+    2
 }
 
-pub fn or_a_n8(game_state: &mut GameState) {
+pub fn or_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     let result = general_or_a(game_state, val, false);
     game_state.set_register8(Register::A, result);
+    2
 }
 
-pub fn xor_a_r8(game_state: &mut GameState, r: Register) {
+pub fn xor_a_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_or_a(game_state, game_state.get_register8(r), true);
     game_state.set_register8(Register::A, result);
+    1
 }
 
-pub fn xor_a_hladdr(game_state: &mut GameState) {
+pub fn xor_a_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_or_a(game_state, game_state.read(addr), true);
     game_state.write(result, addr);
+    2
 }
 
-pub fn xor_a_n8(game_state: &mut GameState) {
+pub fn xor_a_n8(game_state: &mut GameState) -> u8 {
     let val = game_state.read(game_state.get_register16(Register::PC) + 1);
     let result = general_or_a(game_state, val, true);
     game_state.set_register8(Register::A, result);
+    2
 }
 
 // Bit Flag
-pub fn bit_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
-    if u > 7 {
-        return;
-    }
+pub fn bit_u3_r8(game_state: &mut GameState, u: u8, r: Register) -> u8 {
     let zero_flag = (game_state.get_register8(r) & (1 << u)) == 0;
     let new_flags = Flags {
         Z: zero_flag,
@@ -469,12 +526,10 @@ pub fn bit_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
     };
 
     game_state.set_flags(&new_flags);
+    2
 }
 
-pub fn bit_u3_hladdr(game_state: &mut GameState, u: u8) {
-    if u > 7 {
-        return;
-    }
+pub fn bit_u3_hladdr(game_state: &mut GameState, u: u8) -> u8 {
     let zero_flag = (game_state.read(game_state.get_register16(Register::HL)) & (1 << u)) == 0;
     let new_flags = Flags {
         Z: zero_flag,
@@ -484,36 +539,29 @@ pub fn bit_u3_hladdr(game_state: &mut GameState, u: u8) {
     };
 
     game_state.set_flags(&new_flags);
+    3
 }
 
-pub fn res_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
-    if u > 7 {
-        return;
-    }
+pub fn res_u3_r8(game_state: &mut GameState, u: u8, r: Register) -> u8 {
     game_state.set_register8(r, game_state.get_register8(r) & !(1 << u));
+    2
 }
 
-pub fn res_u3_hladdr(game_state: &mut GameState, u: u8) {
-    if u > 7 {
-        return;
-    }
+pub fn res_u3_hladdr(game_state: &mut GameState, u: u8) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     game_state.write(game_state.read(addr) & !(1 << u), addr);
+    4
 }
 
-pub fn set_u3_r8(game_state: &mut GameState, u: u8, r: Register) {
-    if u > 7 {
-        return;
-    }
+pub fn set_u3_r8(game_state: &mut GameState, u: u8, r: Register) -> u8 {
     game_state.set_register8(r, game_state.get_register8(r) | (1 << u));
+    2
 }
 
-pub fn set_u3_hladdr(game_state: &mut GameState, u: u8) {
-    if u > 7 {
-        return;
-    }
+pub fn set_u3_hladdr(game_state: &mut GameState, u: u8) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     game_state.write(game_state.read(addr) | (1 << u), addr);
+    4
 }
 
 // Bit Shift
@@ -531,20 +579,23 @@ fn general_rl(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
     result
 }
 
-pub fn rl_r8(game_state: &mut GameState, r: Register) {
+pub fn rl_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_rl(game_state, game_state.get_register8(r), true);
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn rl_hladdr(game_state: &mut GameState) {
+pub fn rl_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_rl(game_state, game_state.read(addr), true);
     game_state.write(result, addr);
+    4
 }
 
-pub fn rl_a(game_state: &mut GameState) {
+pub fn rla(game_state: &mut GameState) -> u8 {
     let result = general_rl(game_state, game_state.get_register8(Register::A), false);
     game_state.set_register8(Register::A, result);
+    1
 }
 
 fn general_rlc(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
@@ -560,20 +611,23 @@ fn general_rlc(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
     result
 }
 
-pub fn rlc_r8(game_state: &mut GameState, r: Register) {
+pub fn rlc_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_rlc(game_state, game_state.get_register8(r), true);
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn rlc_hladdr(game_state: &mut GameState) {
+pub fn rlc_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_rlc(game_state, game_state.read(addr), true);
     game_state.write(result, addr);
+    4
 }
 
-pub fn rlca(game_state: &mut GameState) {
+pub fn rlca(game_state: &mut GameState) -> u8 {
     let result = general_rlc(game_state, game_state.get_register8(Register::A), false);
     game_state.set_register8(Register::A, result);
+    1
 }
 
 fn general_rr(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
@@ -590,20 +644,23 @@ fn general_rr(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
     result
 }
 
-pub fn rr_r8(game_state: &mut GameState, r: Register) {
+pub fn rr_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_rr(game_state, game_state.get_register8(r), true);
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn rr_hladdr(game_state: &mut GameState) {
+pub fn rr_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_rr(game_state, game_state.read(addr), true);
     game_state.write(result, addr);
+    4
 }
 
-pub fn rr_a(game_state: &mut GameState) {
+pub fn rra(game_state: &mut GameState) -> u8 {
     let result = general_rr(game_state, game_state.get_register8(Register::A), false);
     game_state.set_register8(Register::A, result);
+    1
 }
 
 fn general_rrc(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
@@ -619,20 +676,23 @@ fn general_rrc(game_state: &mut GameState, val: u8, check_zero: bool) -> u8 {
     result
 }
 
-pub fn rrc_r8(game_state: &mut GameState, r: Register) {
+pub fn rrc_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_rrc(game_state, game_state.get_register8(r), true);
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn rrc_hladdr(game_state: &mut GameState) {
+pub fn rrc_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_rrc(game_state, game_state.read(addr), true);
     game_state.write(result, addr);
+    4
 }
 
-pub fn rrc_a(game_state: &mut GameState) {
+pub fn rrca(game_state: &mut GameState) -> u8 {
     let result = general_rrc(game_state, game_state.get_register8(Register::A), false);
     game_state.set_register8(Register::A, result);
+    1
 }
 
 fn general_sla(game_state: &mut GameState, val: u8) -> u8 {
@@ -648,15 +708,17 @@ fn general_sla(game_state: &mut GameState, val: u8) -> u8 {
     result
 }
 
-pub fn sla_r8(game_state: &mut GameState, r: Register) {
+pub fn sla_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_sla(game_state, game_state.get_register8(r));
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn sla_hladdr(game_state: &mut GameState) {
+pub fn sla_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_sla(game_state, game_state.read(addr));
     game_state.write(result, addr);
+    4
 }
 
 fn general_sra(game_state: &mut GameState, val: u8) -> u8 {
@@ -673,15 +735,17 @@ fn general_sra(game_state: &mut GameState, val: u8) -> u8 {
     result
 }
 
-pub fn sra_r8(game_state: &mut GameState, r: Register) {
+pub fn sra_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_sra(game_state, game_state.get_register8(r));
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn sra_hladdr(game_state: &mut GameState) {
+pub fn sra_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_sra(game_state, game_state.read(addr));
     game_state.write(result, addr);
+    4
 }
 
 fn general_srl(game_state: &mut GameState, val: u8) -> u8 {
@@ -697,15 +761,17 @@ fn general_srl(game_state: &mut GameState, val: u8) -> u8 {
     result
 }
 
-pub fn srl_r8(game_state: &mut GameState, r: Register) {
+pub fn srl_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = general_srl(game_state, game_state.get_register8(r));
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn srl_hladdr(game_state: &mut GameState) {
+pub fn srl_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = general_srl(game_state, game_state.read(addr));
     game_state.write(result, addr);
+    4
 }
 
 fn swap_general(game_state: &mut GameState, val: u8) -> u8 {
@@ -722,18 +788,20 @@ fn swap_general(game_state: &mut GameState, val: u8) -> u8 {
     result
 }
 
-pub fn swap_r8(game_state: &mut GameState, r: Register) {
+pub fn swap_r8(game_state: &mut GameState, r: Register) -> u8 {
     let result = swap_general(game_state, game_state.get_register8(r));
     game_state.set_register8(r, result);
+    2
 }
 
-pub fn swap_hladdr(game_state: &mut GameState) {
+pub fn swap_hladdr(game_state: &mut GameState) -> u8 {
     let addr = game_state.get_register16(Register::HL);
     let result = swap_general(game_state, game_state.read(addr));
     game_state.write(result, addr);
+    4
 }
 
-pub fn call_n16(game_state: &mut GameState) {
+pub fn call_n16(game_state: &mut GameState) -> u8 {
     let next_addr = game_state.get_register16(Register::PC) + 3;
     let lsb = (next_addr & 0x00FF) as u8;
     let msb = (next_addr >> 8) as u8;
@@ -742,9 +810,10 @@ pub fn call_n16(game_state: &mut GameState) {
     dec_sp(game_state);
     game_state.write(lsb, game_state.get_register16(Register::SP));
     jp_n16(game_state);
+    6
 }
 
-pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
     let flags = game_state.get_flags();
     if ((n && z) && (flags.N && flags.Z))
         || ((n && c) && (flags.N && flags.C))
@@ -752,23 +821,27 @@ pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
         || (c && flags.C)
     {
         call_n16(game_state);
-    }
+	return 6;
+    } 
+    3
 }
 
-pub fn jp_hl(game_state: &mut GameState) {
+pub fn jp_hl(game_state: &mut GameState) -> u8 {
     game_state.set_register16(Register::PC, game_state.get_register16(Register::HL));
     game_state.set_pc_moved(true);
+    1
 }
 
-pub fn jp_n16(game_state: &mut GameState) {
+pub fn jp_n16(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::PC, jump_addr);
     game_state.set_pc_moved(true);
+    4
 }
 
-pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
     let flags = game_state.get_flags();
     if ((n && z) && (flags.N && flags.Z))
         || ((n && c) && (flags.N && flags.C))
@@ -776,19 +849,22 @@ pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
         || (c && flags.C)
     {
         jp_n16(game_state);
+	return 4;
     }
+    3
 }
 
-pub fn jr_n16(game_state: &mut GameState) {
+pub fn jr_n16(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let jump_addr = ((game_state.get_register16(Register::PC) + 3) as i32)
         + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
     game_state.set_register16(Register::PC, jump_addr as u16);
     game_state.set_pc_moved(true);
+    3
 }
 
-pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
     let flags = game_state.get_flags();
     if ((n && z) && (flags.N && flags.Z))
         || ((n && c) && (flags.N && flags.C))
@@ -796,19 +872,25 @@ pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
         || (c && flags.C)
     {
         jr_n16(game_state);
+	return 3;
     }
+    2
 }
 
-pub fn ret(game_state: &mut GameState) {
+pub fn ret(game_state: &mut GameState) -> u8 {
     pop_r16(game_state, Register::PC);
+    game_state.set_pc_moved(true);
+    4
 }
 
-pub fn reti(game_state: &mut GameState) {
+pub fn reti(game_state: &mut GameState) -> u8 {
     game_state.set_interrupts(true);
     pop_r16(game_state, Register::PC);
+    game_state.set_pc_moved(true);
+    4
 }
 
-pub fn ret_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
+pub fn ret_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
     let flags = game_state.get_flags();
     if ((n && z) && (flags.N && flags.Z))
         || ((n && c) && (flags.N && flags.C))
@@ -816,10 +898,12 @@ pub fn ret_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) {
         || (c && flags.C)
     {
         ret(game_state);
+	return 5;
     }
+    2
 }
 
-pub fn rst_vec(game_state: &mut GameState, vec: u8) {
+pub fn rst_vec(game_state: &mut GameState, vec: u8) -> u8 {
     let next_addr = game_state.get_register16(Register::PC) + 1;
     let n_lsb = (next_addr & 0x00FF) as u8;
     let n_msb = (next_addr >> 8) as u8;
@@ -832,10 +916,11 @@ pub fn rst_vec(game_state: &mut GameState, vec: u8) {
     let jump_addr = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::PC, jump_addr);
     game_state.set_pc_moved(true);
+    4
 }
 
 // Carry Flag
-pub fn ccf(game_state: &mut GameState) {
+pub fn ccf(game_state: &mut GameState) -> u8 {
     let old_flags = game_state.get_flags();
     let new_flags = Flags {
         Z: old_flags.Z,
@@ -844,9 +929,10 @@ pub fn ccf(game_state: &mut GameState) {
         C: !old_flags.C,
     };
     game_state.set_flags(&new_flags);
+    1
 }
 
-pub fn scf(game_state: &mut GameState) {
+pub fn scf(game_state: &mut GameState) -> u8 {
     let old_flags = game_state.get_flags();
     let new_flags = Flags {
         Z: old_flags.Z,
@@ -855,10 +941,12 @@ pub fn scf(game_state: &mut GameState) {
         C: true,
     };
     game_state.set_flags(&new_flags);
+    1
 }
 
-pub fn add_hl_sp(game_state: &mut GameState) {
+pub fn add_hl_sp(game_state: &mut GameState) -> u8 {
     add_hl_r16(game_state, Register::SP);
+    2
 }
 
 // returns 16-bit sum value, bit 3 overflow, and bit 7 overflow
@@ -871,7 +959,7 @@ fn add16_special(a: u16, b: u16) -> (u16, bool, bool) {
     (sum as u16, half_carry, carry_out)
 }
 
-pub fn add_sp_e8(game_state: &mut GameState) {
+pub fn add_sp_e8(game_state: &mut GameState) -> u8 {
     let e = game_state.read(game_state.get_register16(Register::PC) + 1) as i8;
     let (result, half_carry, carry_out) =
         add16_special(game_state.get_register16(Register::SP), e as i16 as u16);
@@ -885,17 +973,20 @@ pub fn add_sp_e8(game_state: &mut GameState) {
     };
 
     game_state.set_flags(&new_flags);
+    4
 }
 
-pub fn dec_sp(game_state: &mut GameState) {
+pub fn dec_sp(game_state: &mut GameState) -> u8 {
     game_state.set_register16(Register::SP, game_state.get_register16(Register::SP) - 1);
+    2
 }
 
-pub fn inc_sp(game_state: &mut GameState) {
+pub fn inc_sp(game_state: &mut GameState) -> u8 {
     game_state.set_register16(Register::SP, game_state.get_register16(Register::SP) + 1);
+    2
 }
 
-pub fn ld_hl_spe8(game_state: &mut GameState) {
+pub fn ld_hl_spe8(game_state: &mut GameState) -> u8 {
     let e = game_state.read(game_state.get_register16(Register::PC) + 1) as i8;
     let (result, half_carry, carry_out) =
         add16_special(game_state.get_register16(Register::SP), e as i16 as u16);
@@ -910,9 +1001,10 @@ pub fn ld_hl_spe8(game_state: &mut GameState) {
     };
 
     game_state.set_flags(&new_flags);
+    3
 }
 
-pub fn ld_n16addr_sp(game_state: &mut GameState) {
+pub fn ld_n16addr_sp(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let addr = ((msb as u16) << 8) | (lsb as u16);
@@ -921,29 +1013,33 @@ pub fn ld_n16addr_sp(game_state: &mut GameState) {
     let val2 = (sp_val >> 8) as u8;
     game_state.write(val1, addr);
     game_state.write(val2, addr + 1);
+    5
 }
 
-pub fn ld_sp_n16addr(game_state: &mut GameState) {
+pub fn ld_sp_n16addr(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let val = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(Register::SP, val);
+    3
 }
 
-pub fn ld_sp_hl(game_state: &mut GameState) {
+pub fn ld_sp_hl(game_state: &mut GameState) -> u8 {
     game_state.set_register16(Register::SP, game_state.get_register16(Register::HL));
+    2
 }
 
-pub fn pop_r16(game_state: &mut GameState, r: Register) {
+pub fn pop_r16(game_state: &mut GameState, r: Register) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::SP));
     inc_sp(game_state);
     let msb = game_state.read(game_state.get_register16(Register::SP));
     inc_sp(game_state);
     let val = ((msb as u16) << 8) | (lsb as u16);
     game_state.set_register16(r, val);
+    3
 }
 
-pub fn push_r16(game_state: &mut GameState, r: Register) {
+pub fn push_r16(game_state: &mut GameState, r: Register) -> u8 {
     let reg_val = game_state.get_register16(r);
     let lsb = (reg_val & 0x00FF) as u8;
     let msb = (reg_val >> 8) as u8;
@@ -951,19 +1047,22 @@ pub fn push_r16(game_state: &mut GameState, r: Register) {
     game_state.write(msb, game_state.get_register16(Register::SP));
     dec_sp(game_state);
     game_state.write(lsb, game_state.get_register16(Register::SP));
+    4
 }
 
 // Interrupts
-pub fn di(game_state: &mut GameState) {
+pub fn di(game_state: &mut GameState) -> u8 {
     game_state.set_interrupts(false);
+    1
 }
 
-pub fn ei(game_state: &mut GameState) {
+pub fn ei(game_state: &mut GameState) -> u8 {
     game_state.set_interrupts(true);
+    1
 }
 
 // Misc
-pub fn daa(game_state: &mut GameState) {
+pub fn daa(game_state: &mut GameState) -> u8 {
     let flags = game_state.get_flags();
 
     let mut adjustment: i16 = 0;
@@ -984,9 +1083,10 @@ pub fn daa(game_state: &mut GameState) {
 
     if result == 0 { new_flags.Z = true; }
     game_state.set_flags(&new_flags);
+    1
 }
 
-pub fn stop(game_state: &mut GameState) {}
+pub fn stop(game_state: &mut GameState) -> u8 { 0 }
 
 // TODO HALT Implementation
-pub fn halt(game_state: &mut GameState) {}
+pub fn halt(game_state: &mut GameState) -> u8 { 0 }
