@@ -589,12 +589,12 @@ impl CPU {
     pub fn main_loop(&self, game_state: &mut GameState) {
         let mut curr_PC = game_state.get_register16(Register::PC);
         let mut next_instruction = game_state.read(curr_PC);
+	let mut cycles = 0;
 
         for _ in 0..20 {
             let mut advance_amount = 1;
             if next_instruction != 0xCB {
-		println!("Non-prefix instruction: {:02X}", next_instruction);
-                (self.non_prefix_opcodes[next_instruction as usize])(game_state);
+                cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
                 if self.two_byte_ins.contains(&next_instruction) {
                     advance_amount = 2;
                 } else if self.three_byte_ins.contains(&next_instruction) {
@@ -602,19 +602,18 @@ impl CPU {
                 }
             } else {
 		let actual_ins = game_state.read(curr_PC + 1);
-		println!("CB-prefix instruction: {:02X}", actual_ins);
-                (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
+                cycles = (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
                 advance_amount = 2;
             }
 
             if game_state.pc_moved() {
                 advance_amount = 0;
                 game_state.set_pc_moved(false);
-		println!("New PC: 0x{:04X}", game_state.get_register16(Register::PC));
             } 
 
+	    game_state.update_clock(cycles);
+
             // it is possible for curr_PC and Register::PC to disagree at this point
-	    println!("advance amount: {}", advance_amount);
             curr_PC = game_state.get_register16(Register::PC) + advance_amount;
             game_state.set_register16(Register::PC, curr_PC);
             next_instruction = game_state.read(curr_PC);
