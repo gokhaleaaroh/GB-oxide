@@ -14,17 +14,26 @@ pub struct PPU {
     active_sprites: [OamEntry; 10],
 }
 
-fn get_tile_pixel(lcdc: u8, tile_index: u8, x_tile: u8, y_tile: u8, game_state: &mut GameState) -> u8 {
+fn get_tile_pixel(
+    lcdc: u8,
+    tile_index: u8,
+    x_tile: u8,
+    y_tile: u8,
+    game_state: &mut GameState,
+    sprite: bool,
+) -> u8 {
     let tile;
     let tile_addr;
-    if lcdc & LCDC_TILE_BG_DATA == 0 { // 0x9000 addressing mode
-	if tile_index <= 127 {
-	    tile_addr = 0x8000 + (tile_index as u16 * 16);
-	} else {
-	    tile_addr = 0x8800 + ((tile_index - 128) as u16 * 16);
-	}
-    } else { // 0x8000 addressing mode
-	tile_addr = 0x8000 + (tile_index as u16 * 16);
+    if lcdc & LCDC_TILE_BG_DATA == 0 && !sprite {
+        // 0x9000 addressing mode
+        if tile_index <= 127 {
+            tile_addr = 0x8000 + (tile_index as u16 * 16);
+        } else {
+            tile_addr = 0x8800 + ((tile_index - 128) as u16 * 16);
+        }
+    } else {
+        // 0x8000 addressing mode
+        tile_addr = 0x8000 + (tile_index as u16 * 16);
     }
     tile = game_state.get_tile_from_addr(tile_addr);
     let tile_row = tile[y_tile as usize];
@@ -37,89 +46,138 @@ fn get_tile_pixel(lcdc: u8, tile_index: u8, x_tile: u8, y_tile: u8, game_state: 
 
 impl PPU {
     pub fn oam_scan(&mut self, game_state: &mut GameState) {
-	let mut count = 0;
-	let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 { 8 } else { 16 };
+        let mut count = 0;
+        let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
+            8
+        } else {
+            16
+        };
 
-	for i in 0..40 {
-	    if count == 10 {
-		break;
-	    }
+        for i in 0..40 {
+            if count == 10 {
+                break;
+            }
 
-	    let sprite_loc = (i*4) as u8;
-	    let obj_entry = game_state.get_oam_entry(sprite_loc);
-	    let y_min = obj_entry[0].wrapping_sub(16);
-	    let y_max = y_min + sprite_height;
-	    let ly = game_state.get_ly();
+            let sprite_loc = (i * 4) as u8;
+            let obj_entry = game_state.get_oam_entry(sprite_loc);
+            let y_min = obj_entry[0] - 16;
+            let y_max = y_min + sprite_height;
+            let ly = game_state.get_ly();
 
-	    if y_min <= ly &&  ly <= y_max {
-		self.active_sprites[count] = OamEntry{
-		    y_pos: obj_entry[0],
-		    x_pos: obj_entry[1],
-		    tile_index: obj_entry[2],
-		    attrs: obj_entry[3]
-		};
-		count += 1;
-	    }
-	}
+            if y_min <= ly && ly <= y_max {
+                self.active_sprites[count] = OamEntry {
+                    y_pos: obj_entry[0],
+                    x_pos: obj_entry[1],
+                    tile_index: obj_entry[2],
+                    attrs: obj_entry[3],
+                };
+                count += 1;
+            }
+        }
     }
 
-    pub fn gen_scanline(&mut self, game_state: &mut GameState) -> [u8; 160] {
-	let mut result: [u8; 160] = [0; 160];
-	let ly = game_state.get_ly();
-	let scx = game_state.get_scx();
-	let scy = game_state.get_scy();
-	let wx = game_state.get_wx();
-	let wy = game_state.get_wy();
-	let lcdc = game_state.get_lcdc();
+    pub fn gen_scanline(&self, game_state: &mut GameState) -> [u8; 160] {
+        let mut result: [u8; 160] = [0; 160];
+        let ly = game_state.get_ly();
+        let scx = game_state.get_scx();
+        let scy = game_state.get_scy();
+        let wx = game_state.get_wx();
+        let wy = game_state.get_wy();
+        let lcdc = game_state.get_lcdc();
 
-	for x_screen in 0..160u8 {
-	    let mut final_pix;
+        for x_screen in 0..160u8 {
+            let mut final_pix;
 
-	    if lcdc & LCDC_WIN_ON == 0 && (ly >= wx && x_screen >= wy - 7) { // Window enabled
-		    let win_x = x_screen - wx + 7;
-		    let win_y = ly - wy;
-		    let t_x = win_x / 8;
-		    let t_y = win_y / 8;
-		    let x_tile = (win_x % 8) as u8;
-		    let y_tile = (win_y % 8) as u8;
-		    let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
-		    let tile_index = game_state.get_tile_index(i_in_tmap);
-		    final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state);
-	    } else { // Only compute BG if Window pixel is off
-		let bg_x = (scx as u16 + x_screen as u16) % 256;
-		let bg_y = (scy as u16 + ly as u16) % 256;
-		let t_x = bg_x / 8;
-		let t_y = bg_y / 8;
-		let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
-		let tile_index = game_state.get_tile_index(i_in_tmap);
-		let x_tile = (bg_x % 8) as u8;
-		let y_tile = (bg_y % 8) as u8;
-		final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state);
-	    }
+            if lcdc & LCDC_WIN_ON != 0 && (ly >= wx && x_screen >= wy - 7) {
+                // Window enabled
+                let win_x = x_screen - wx + 7;
+                let win_y = ly - wy;
+                let t_x = win_x / 8;
+                let t_y = win_y / 8;
+                let x_tile = (win_x % 8) as u8;
+                let y_tile = (win_y % 8) as u8;
+                let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
+                let tile_index = game_state.get_tile_index(i_in_tmap);
+                final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state, false);
+            } else {
+                // Only compute BG if Window pixel is off
+                let bg_x = (scx as u16 + x_screen as u16) % 256;
+                let bg_y = (scy as u16 + ly as u16) % 256;
+                let t_x = bg_x / 8;
+                let t_y = bg_y / 8;
+                let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
+                let tile_index = game_state.get_tile_index(i_in_tmap);
+                let x_tile = (bg_x % 8) as u8;
+                let y_tile = (bg_y % 8) as u8;
+                final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state, false);
+            }
 
-	    // TODO Sprite pixel
-	}
+            for i in 0..10 {
+                let sprite_top = self.active_sprites[i].y_pos - 16;
+                let sprite_left = self.active_sprites[i].x_pos - 8;
+                let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
+                    8
+                } else {
+                    16
+                };
 
-	result
-	
+                if sprite_top <= ly && ly <= sprite_top + sprite_height {
+                    // sprite in line
+                    let attrs = self.active_sprites[i].attrs;
+                    let y_flip = attrs & SPRITE_Y_FLIP != 0;
+                    let v_offset = if y_flip {
+                        sprite_height - (ly - sprite_top) - 1
+                    } else {
+                        ly - sprite_top
+                    };
+                    let x_flip = attrs & SPRITE_X_FLIP != 0;
+                    let h_offset = if x_flip {
+                        7 - (x_screen - sprite_left)
+                    } else {
+                        x_screen - sprite_left
+                    };
+                    let tile_index;
+                    if sprite_height == 8 {
+                        tile_index = self.active_sprites[i].tile_index;
+                    } else {
+                        tile_index = (self.active_sprites[i].tile_index & 0b1111_1110)
+                            + (if v_offset >= 8 { 1 } else { 0 });
+                    }
+
+                    let pix_val =
+                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset, game_state, true);
+                    if pix_val != 0 {
+                        if attrs & SPRITE_PRIORITY == 0 {
+                            final_pix = pix_val;
+                        } else {
+                            if pix_val == 0 {
+                                final_pix = pix_val;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            result[x_screen as usize] = final_pix;
+        }
+
+        result
     }
 
     pub fn step(&mut self, cycles: u8, game_state: &mut GameState) {
-	self.dot_counter += cycles as u128;
-	while self.dot_counter >= DOTS_PER_SL as u128 {
-	    self.dot_counter -= DOTS_PER_SL as u128;
-	    game_state.inc_ly(1);
-	    let new_ly = game_state.get_ly();
-	    if  new_ly == VISIBLE_SL {
-
-		// TODO Generate scanline and send to minifb buffer
-		self.oam_scan(game_state);
-		self.dot_counter += 80;
-
-
-	    } else if new_ly > MAX_SL {
-		game_state.set_ly(0);
-	    }
-	}
+        self.dot_counter += cycles as u128;
+        while self.dot_counter >= DOTS_PER_SL as u128 {
+            self.dot_counter -= DOTS_PER_SL as u128;
+            game_state.inc_ly(1);
+            let new_ly = game_state.get_ly();
+            if new_ly == VISIBLE_SL {
+                // TODO Generate scanline and send to minifb buffer
+                self.oam_scan(game_state);
+                self.dot_counter += 80;
+            } else if new_ly > MAX_SL {
+                game_state.set_ly(0);
+            }
+        }
     }
 }
