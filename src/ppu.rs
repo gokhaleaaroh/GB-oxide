@@ -42,8 +42,8 @@ impl PPU {
 	}
     }
 
-    pub fn gen_scanline(&mut self, game_state: &mut GameState) -> [u32; 160] {
-	let mut result: [u32; 160] = [0; 160];
+    pub fn gen_scanline(&mut self, game_state: &mut GameState) -> [u8; 160] {
+	let mut result: [u8; 160] = [0; 160];
 	let ly = game_state.get_ly();
 	let scx = game_state.get_scx();
 	let scy = game_state.get_scy();
@@ -71,11 +71,19 @@ impl PPU {
 		tile = game_state.get_tile_from_addr(tile_addr);
 	    }
 
-	    // Use bg_x, bg_y to index into the tile to extract a pixel
-	    // (bg_x % 8, bg_y % 8) - coordinate in the tile
-	    // bg_y % 8 indexes into the tile array
-	    // bg_x % 8 selects the bit from both 
+	    let x_tile = bg_x % 8;
+	    let y_tile = bg_y % 8;
 
+	    let tile_row = tile[y_tile as usize];
+	    let upper_byte = (tile_row & 0xFF00) >> 8;
+	    let lower_byte = tile_row & 0x00FF;
+	    let upper_bit = (upper_byte >> (7 - x_tile)) & 1;
+	    let lower_bit = (lower_byte >> (7 - x_tile)) & 1;
+	    let bg_val = ((upper_bit << 1) | lower_bit) as u8;
+
+	    // TODO Window pixel
+
+	    // TODO Sprite pixel
 	}
 
 	result
