@@ -14,6 +14,27 @@ pub struct PPU {
     active_sprites: [OamEntry; 10],
 }
 
+fn get_tile_pixel(lcdc: u8, tile_index: u8, x_tile: u8, y_tile: u8, game_state: &mut GameState) -> u8 {
+    let tile;
+    let tile_addr;
+    if lcdc & LCDC_TILE_BG_DATA == 0 { // 0x9000 addressing mode
+	if tile_index <= 127 {
+	    tile_addr = 0x8000 + (tile_index as u16 * 16);
+	} else {
+	    tile_addr = 0x8800 + ((tile_index - 128) as u16 * 16);
+	}
+    } else { // 0x8000 addressing mode
+	tile_addr = 0x8000 + (tile_index as u16 * 16);
+    }
+    tile = game_state.get_tile_from_addr(tile_addr);
+    let tile_row = tile[y_tile as usize];
+    let upper_byte = (tile_row & 0xFF00) >> 8;
+    let lower_byte = tile_row & 0x00FF;
+    let upper_bit = (upper_byte >> (7 - x_tile)) & 1;
+    let lower_bit = (lower_byte >> (7 - x_tile)) & 1;
+    ((upper_bit << 1) | lower_bit) as u8
+}
+
 impl PPU {
     pub fn oam_scan(&mut self, game_state: &mut GameState) {
 	let mut count = 0;
@@ -47,41 +68,34 @@ impl PPU {
 	let ly = game_state.get_ly();
 	let scx = game_state.get_scx();
 	let scy = game_state.get_scy();
-	let td_mode = game_state.get_lcdc() & LCDC_TILE_DATA == 0;
+	let wx = game_state.get_wx();
+	let wy = game_state.get_wy();
+	let lcdc = game_state.get_lcdc();
 
-	for x_screen in 0..160 {
-	    let bg_x = (scx as u16 + x_screen) % 256;
-	    let bg_y = (scy + ly) as u16 % 256;
-	    let t_x = bg_x / 8;
-	    let t_y = bg_y / 8;
-	    let i_in_tmap = t_y * 8 + t_x;
-	    let tile_index = game_state.get_tile_index(i_in_tmap);
+	for x_screen in 0..160u8 {
+	    let mut final_pix;
 
-	    let tile;
-	    if td_mode { // 0x9000 addressing mode
-		let tile_addr;
-		if tile_index <= 127 {
-		    tile_addr = 0x8000 + (tile_index as u16 * 16);
-		} else {
-		    tile_addr = 0x8800 + ((tile_index - 128) as u16 * 16);
-		}
-		tile = game_state.get_tile_from_addr(tile_addr);
-	    } else { // 0x8000 addressing mode
-		let tile_addr = 0x8000 + (tile_index as u16 * 16);
-		tile = game_state.get_tile_from_addr(tile_addr);
+	    if lcdc & LCDC_WIN_ON == 0 && (ly >= wx && x_screen >= wy - 7) { // Window enabled
+		    let win_x = x_screen - wx + 7;
+		    let win_y = ly - wy;
+		    let t_x = win_x / 8;
+		    let t_y = win_y / 8;
+		    let x_tile = (win_x % 8) as u8;
+		    let y_tile = (win_y % 8) as u8;
+		    let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
+		    let tile_index = game_state.get_tile_index(i_in_tmap);
+		    final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state);
+	    } else { // Only compute BG if Window pixel is off
+		let bg_x = (scx as u16 + x_screen as u16) % 256;
+		let bg_y = (scy as u16 + ly as u16) % 256;
+		let t_x = bg_x / 8;
+		let t_y = bg_y / 8;
+		let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
+		let tile_index = game_state.get_tile_index(i_in_tmap);
+		let x_tile = (bg_x % 8) as u8;
+		let y_tile = (bg_y % 8) as u8;
+		final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state);
 	    }
-
-	    let x_tile = bg_x % 8;
-	    let y_tile = bg_y % 8;
-
-	    let tile_row = tile[y_tile as usize];
-	    let upper_byte = (tile_row & 0xFF00) >> 8;
-	    let lower_byte = tile_row & 0x00FF;
-	    let upper_bit = (upper_byte >> (7 - x_tile)) & 1;
-	    let lower_bit = (lower_byte >> (7 - x_tile)) & 1;
-	    let bg_val = ((upper_bit << 1) | lower_bit) as u8;
-
-	    // TODO Window pixel
 
 	    // TODO Sprite pixel
 	}

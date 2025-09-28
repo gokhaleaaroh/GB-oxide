@@ -385,6 +385,14 @@ impl GameState {
 	return self.gb.io_registers.scy;
     }
 
+    pub fn get_wx(&self) -> u8 {
+	return self.gb.io_registers.wx;
+    }
+
+    pub fn get_wy(&self) -> u8 {
+	return self.gb.io_registers.wy;
+    }
+
     pub fn inc_ly(&mut self, amount: u8) {
 	self.gb.io_registers.ly = (self.gb.io_registers.ly + amount) % 154;
     }
