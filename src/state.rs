@@ -320,4 +320,9 @@ impl GameState {
     pub fn update_clock(&mut self, add_cycles: u8) {
 	self.gb.cycles += add_cycles as u128;
     }
+
+    pub fn get_oam_entry(&self, loc: u8) -> [u8; 4] {
+	let l = (loc % 0xA0) as usize;
+	return [self.gb.memory.oam[l], self.gb.memory.oam[l + 1], self.gb.memory.oam[l + 2], self.gb.memory.oam[l + 3]];
+    }
 }

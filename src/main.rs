@@ -39,5 +39,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 	    .update_with_buffer(&buffer, 160, 144)
 	    .unwrap();
     }
+
     Ok(())
 }
