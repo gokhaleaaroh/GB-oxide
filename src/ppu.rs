@@ -2,6 +2,7 @@
 use crate::constants::*;
 use crate::state::GameState;
 
+#[derive(Clone, Copy)]
 struct OamEntry {
     y_pos: u8,
     x_pos: u8,
@@ -9,9 +10,14 @@ struct OamEntry {
     attrs: u8,
 }
 
-pub struct PPU {
-    dot_counter: u128,
-    active_sprites: [OamEntry; 10],
+fn gb_color_to_u32(code: u8) -> u32 {
+    match code {
+        0b00 => 0xFFFFFFFF, // white
+        0b01 => 0xFF9BB7FF, // light blue
+        0b10 => 0xFF4863A0, // medium blue
+        0b11 => 0xFF0A0A40, // dark navy
+        _    => 0xFFFF00FF,
+    }
 }
 
 fn get_tile_pixel(
@@ -44,8 +50,23 @@ fn get_tile_pixel(
     ((upper_bit << 1) | lower_bit) as u8
 }
 
+pub struct PPU {
+    dot_counter: u128,
+    active_sprites: [Option<OamEntry>; 10],
+    pub current_fb: Vec<u32>
+}
+
 impl PPU {
-    pub fn oam_scan(&mut self, game_state: &mut GameState) {
+    pub fn initialize() -> Self {
+	const NONE: Option<OamEntry> = None;
+	Self {
+	    dot_counter: 0,
+	    active_sprites: [NONE; 10],
+	    current_fb: vec![]
+	}
+    }
+
+    fn oam_scan(&mut self, game_state: &mut GameState) {
         let mut count = 0;
         let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
             8
@@ -65,18 +86,18 @@ impl PPU {
             let ly = game_state.get_ly();
 
             if y_min <= ly && ly <= y_max {
-                self.active_sprites[count] = OamEntry {
+                self.active_sprites[count] = Some(OamEntry {
                     y_pos: obj_entry[0],
                     x_pos: obj_entry[1],
                     tile_index: obj_entry[2],
                     attrs: obj_entry[3],
-                };
+                });
                 count += 1;
             }
         }
     }
 
-    pub fn gen_scanline(&self, game_state: &mut GameState) -> [u8; 160] {
+    fn gen_scanline(&self, game_state: &mut GameState) -> [u8; 160] {
         let mut result: [u8; 160] = [0; 160];
         let ly = game_state.get_ly();
         let scx = game_state.get_scx();
@@ -113,8 +134,11 @@ impl PPU {
             }
 
             for i in 0..10 {
-                let sprite_top = self.active_sprites[i].y_pos - 16;
-                let sprite_left = self.active_sprites[i].x_pos - 8;
+		if self.active_sprites[i].is_none() {
+		    continue;
+		}
+                let sprite_top = self.active_sprites[i].unwrap().y_pos - 16;
+                let sprite_left = self.active_sprites[i].unwrap().x_pos - 8;
                 let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
                     8
                 } else {
@@ -123,7 +147,7 @@ impl PPU {
 
                 if sprite_top <= ly && ly <= sprite_top + sprite_height {
                     // sprite in line
-                    let attrs = self.active_sprites[i].attrs;
+                    let attrs = self.active_sprites[i].unwrap().attrs;
                     let y_flip = attrs & SPRITE_Y_FLIP != 0;
                     let v_offset = if y_flip {
                         sprite_height - (ly - sprite_top) - 1
@@ -138,9 +162,9 @@ impl PPU {
                     };
                     let tile_index;
                     if sprite_height == 8 {
-                        tile_index = self.active_sprites[i].tile_index;
+                        tile_index = self.active_sprites[i].unwrap().tile_index;
                     } else {
-                        tile_index = (self.active_sprites[i].tile_index & 0b1111_1110)
+                        tile_index = (self.active_sprites[i].unwrap().tile_index & 0b1111_1110)
                             + (if v_offset >= 8 { 1 } else { 0 });
                     }
 
@@ -165,19 +189,30 @@ impl PPU {
         result
     }
 
-    pub fn step(&mut self, cycles: u8, game_state: &mut GameState) {
-        self.dot_counter += cycles as u128;
+    // return true if new frame is ready
+    pub fn step(&mut self, cycles: u8, game_state: &mut GameState) -> bool {
+        self.dot_counter += 4*(cycles as u128);
         while self.dot_counter >= DOTS_PER_SL as u128 {
             self.dot_counter -= DOTS_PER_SL as u128;
-            game_state.inc_ly(1);
-            let new_ly = game_state.get_ly();
-            if new_ly == VISIBLE_SL {
-                // TODO Generate scanline and send to minifb buffer
+            let ly = game_state.get_ly();
+            if ly < VISIBLE_SL {
                 self.oam_scan(game_state);
-                self.dot_counter += 80;
-            } else if new_ly > MAX_SL {
+		let next_scanline = self.gen_scanline(game_state);
+
+		for i in 0..160 {
+		    self.current_fb[(ly*160 + i) as usize] = gb_color_to_u32(next_scanline[i as usize]);
+		}
+
+		if ly == 143 { // Buffer finished, sending to minifb
+		    return true;
+		}
+		
+            } else if ly > MAX_SL {
                 game_state.set_ly(0);
             }
+
+	    game_state.inc_ly(1);
         }
+	false
     }
 }
