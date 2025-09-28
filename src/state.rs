@@ -64,6 +64,42 @@ impl Registers {
     }
 }
 
+// TODO Finish this struct
+struct IORegisters {
+    joyp: u8,
+    lcdc: u8,
+    ly: u8,
+    lyc: u8,
+    stat: u8,
+    scy: u8,
+    scx: u8,
+    wy: u8,
+    wx: u8,
+    bgp: u8,
+    obp0: u8,
+    obp1: u8,
+}
+
+impl IORegisters {
+    fn reset_registers() -> Self {
+	Self {
+	    joyp: 0,
+	    lcdc: 0,
+	    ly: 0,
+	    lyc: 0,
+	    stat: 0,
+	    scy: 0,
+	    scx: 0,
+	    wy: 0,
+	    wx: 0,
+	    bgp: 0,
+	    obp0: 0,
+	    obp1: 0,
+	}
+    }
+}
+
+
 struct Memory {
     wram: [u8; 0x2000],
     vram: [u8; 0x2000],
@@ -85,6 +121,7 @@ impl Memory {
 struct Gameboy {
     IME: bool,
     registers: Registers,
+    io_registers: IORegisters,
     memory: Memory,
     pc_moved: bool,
     cycles: u128,
@@ -95,6 +132,7 @@ impl Gameboy {
         Self {
             IME: false,
             registers: Registers::reset_registers(),
+	    io_registers: IORegisters::reset_registers(),
             memory: Memory::reset_memory(),
             pc_moved: false,
 	    cycles: 0
@@ -278,6 +316,8 @@ impl GameState {
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80],
 
+	    // TODO IO Registers and other memory mapped stuff
+
             _ => 0xFF,
         }
     }
@@ -300,6 +340,8 @@ impl GameState {
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
+
+	    // TODO IO Registers and other memory mapped stuff
 
             _ => (),
         }
@@ -324,5 +366,21 @@ impl GameState {
     pub fn get_oam_entry(&self, loc: u8) -> [u8; 4] {
 	let l = (loc % 0xA0) as usize;
 	return [self.gb.memory.oam[l], self.gb.memory.oam[l + 1], self.gb.memory.oam[l + 2], self.gb.memory.oam[l + 3]];
+    }
+
+    pub fn get_lcdc(&self) -> u8 {
+	return self.gb.io_registers.lcdc;
+    }
+
+    pub fn get_ly(&self) -> u8 {
+	return self.gb.io_registers.ly;
+    }
+
+    pub fn inc_ly(&mut self, amount: u8) {
+	self.gb.io_registers.ly = (self.gb.io_registers.ly + amount) % 154;
+    }
+
+    pub fn set_ly(&mut self, val: u8) {
+	self.gb.io_registers.ly = val;
     }
 }
