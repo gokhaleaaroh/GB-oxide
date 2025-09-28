@@ -1,4 +1,5 @@
 use std::error::Error;
+mod constants;
 mod cpu;
 mod instructions;
 mod state;

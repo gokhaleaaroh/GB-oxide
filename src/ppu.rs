@@ -1,9 +1,6 @@
+// Reference Manual - https://gbdev.io/pandocs/Graphics.html
+use crate::constants::*;
 use crate::state::GameState;
-
-const DOTS_PER_SL: u16 = 456;
-const VISIBLE_SL: u8 = 144;
-const MAX_SL: u8 = 153;
-const SIZE_BIT: u8 = 0b0000_0100;
 
 struct OamEntry {
     y_pos: u8,
@@ -20,7 +17,7 @@ pub struct PPU {
 impl PPU {
     pub fn oam_scan(&mut self, game_state: &mut GameState) {
 	let mut count = 0;
-	let sprite_height = if game_state.get_lcdc() & SIZE_BIT == 0 { 8 } else { 16 };
+	let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 { 8 } else { 16 };
 
 	for i in 0..40 {
 	    if count == 10 {
@@ -45,12 +42,40 @@ impl PPU {
 	}
     }
 
-    pub fn gen_scanline(&mut self) -> [u32; 160] {
+    pub fn gen_scanline(&mut self, game_state: &mut GameState) -> [u32; 160] {
 	let mut result: [u32; 160] = [0; 160];
+	let ly = game_state.get_ly();
+	let scx = game_state.get_scx();
+	let scy = game_state.get_scy();
+	let td_mode = game_state.get_lcdc() & LCDC_TILE_DATA == 0;
 
-	for pixel in 0..160 {
+	for x_screen in 0..160 {
+	    let bg_x = (scx as u16 + x_screen) % 256;
+	    let bg_y = (scy + ly) as u16 % 256;
+	    let t_x = bg_x / 8;
+	    let t_y = bg_y / 8;
+	    let i_in_tmap = t_y * 8 + t_x;
+	    let tile_index = game_state.get_tile_index(i_in_tmap);
 
-	    
+	    let tile;
+	    if td_mode { // 0x9000 addressing mode
+		let tile_addr;
+		if tile_index <= 127 {
+		    tile_addr = 0x8000 + (tile_index as u16 * 16);
+		} else {
+		    tile_addr = 0x8800 + ((tile_index - 128) as u16 * 16);
+		}
+		tile = game_state.get_tile_from_addr(tile_addr);
+	    } else { // 0x8000 addressing mode
+		let tile_addr = 0x8000 + (tile_index as u16 * 16);
+		tile = game_state.get_tile_from_addr(tile_addr);
+	    }
+
+	    // Use bg_x, bg_y to index into the tile to extract a pixel
+	    // (bg_x % 8, bg_y % 8) - coordinate in the tile
+	    // bg_y % 8 indexes into the tile array
+	    // bg_x % 8 selects the bit from both 
+
 	}
 
 	result

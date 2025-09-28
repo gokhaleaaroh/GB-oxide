@@ -1,4 +1,5 @@
 use std::fs;
+use crate::constants::*;
 
 fn generate_16bit(lsb: u8, msb: u8) -> u16 {
     ((msb as u16) << 8) | (lsb as u16)
@@ -376,11 +377,37 @@ impl GameState {
 	return self.gb.io_registers.ly;
     }
 
+    pub fn get_scx(&self) -> u8 {
+	return self.gb.io_registers.scx;
+    }
+
+    pub fn get_scy(&self) -> u8 {
+	return self.gb.io_registers.scy;
+    }
+
     pub fn inc_ly(&mut self, amount: u8) {
 	self.gb.io_registers.ly = (self.gb.io_registers.ly + amount) % 154;
     }
 
     pub fn set_ly(&mut self, val: u8) {
 	self.gb.io_registers.ly = val;
+    }
+
+    pub fn get_tile_index(&self, tile_in_map: u16) -> u8 {
+	if self.gb.io_registers.lcdc & LCDC_TILE_MAP == 0 {
+	    return self.read(0x9800 + tile_in_map);
+	} else {
+	    return self.read(0x9C00 + tile_in_map);
+	}
+    }
+
+    pub fn get_tile_from_addr(&self, addr: u16) -> [u16; 8] {
+	let mut result = [0u16; 8];
+	for i in 0..8 {
+	    let byte1 = self.gb.memory.vram[(addr + 2*i) as usize]; 
+	    let byte2 = self.gb.memory.vram[(addr + 2*i + 1) as usize];
+	    result[i as usize] = ((byte2 as u16) << 8) | (byte1 as u16);
+	}
+	result
     }
 }
