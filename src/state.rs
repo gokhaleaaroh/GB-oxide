@@ -119,7 +119,9 @@ impl Memory {
 }
 
 struct Gameboy {
-    IME: bool,
+    ime: bool,
+    i_enable: u8,
+    i_flag: u8,
     registers: Registers,
     io_registers: IORegisters,
     memory: Memory,
@@ -130,7 +132,9 @@ struct Gameboy {
 impl Gameboy {
     fn reset_gb() -> Self {
         Self {
-            IME: false,
+            ime: false,
+	    i_enable: 0,
+	    i_flag: 0,
             registers: Registers::reset_registers(),
             io_registers: IORegisters::reset_registers(),
             memory: Memory::reset_memory(),
@@ -324,9 +328,25 @@ impl GameState {
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00],
 
-            0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80],
+	    0xFF0F => self.gb.i_flag,
 
             // TODO IO Registers and other memory mapped stuff
+	    0xFF40 => self.gb.io_registers.lcdc,
+
+	    0xFF41 => self.gb.io_registers.stat,
+
+	    0xFF42 => self.gb.io_registers.scy,
+
+	    0xFF43 => self.gb.io_registers.scy,
+
+	    0xFF4A => self.gb.io_registers.wy,
+
+	    0xFF4B => self.gb.io_registers.wx,
+
+            0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80],
+
+	    0xFFFF => self.gb.i_enable,
+
             _ => 0xFF,
         }
     }
@@ -348,15 +368,29 @@ impl GameState {
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
 
+            // TODO IO Registers and other memory mapped stuff
+	    0xFF40 => self.gb.io_registers.lcdc = value,
+
+	    0xFF41 => self.gb.io_registers.stat = value,
+
+	    0xFF42 => self.gb.io_registers.scy = value,
+
+	    0xFF43 => self.gb.io_registers.scy = value,
+
+	    0xFF4A => self.gb.io_registers.wy = value,
+
+	    0xFF4B => self.gb.io_registers.wx = value,
+
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
 
-            // TODO IO Registers and other memory mapped stuff
+
+
             _ => (),
         }
     }
 
     pub fn set_interrupts(&mut self, on: bool) {
-        self.gb.IME = on;
+        self.gb.ime = on;
     }
 
     pub fn pc_moved(&mut self) -> bool {
@@ -424,8 +458,8 @@ impl GameState {
     pub fn get_tile_from_addr(&self, addr: u16) -> [u16; 8] {
         let mut result = [0u16; 8];
         for i in 0..8 {
-            let byte1 = self.gb.memory.vram[(addr + 2 * i) as usize];
-            let byte2 = self.gb.memory.vram[(addr + 2 * i + 1) as usize];
+            let byte1 = self.gb.memory.vram[(addr + 2 * i) as usize - 0x8000];
+            let byte2 = self.gb.memory.vram[(addr + 2 * i + 1) as usize - 0x8000];
             result[i as usize] = ((byte2 as u16) << 8) | (byte1 as u16);
         }
         result

@@ -1,6 +1,7 @@
 // https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7 - reference manual
 
 use crate::state::{Flags, GameState, Register};
+use crate::constants::{INT_VBLANK, INT_LCD, INT_TIMER, INT_SERIAL, INT_JOYPAD};
 
 // Load instructions
 pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) -> u8 {
@@ -855,11 +856,9 @@ pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
     3
 }
 
-pub fn jr_n16(game_state: &mut GameState) -> u8 {
-    let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
-    let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
-    let jump_addr = ((game_state.get_register16(Register::PC) + 3) as i32)
-        + ((((msb as u16) << 8) | (lsb as u16)) as i16 as i32);
+pub fn jr_e8(game_state: &mut GameState) -> u8 {
+    let offset = game_state.read(game_state.get_register16(Register::PC) + 1) as i8;
+    let jump_addr = (game_state.get_register16(Register::PC) as i16) + offset as i16;
     game_state.set_register16(Register::PC, jump_addr as u16);
     game_state.set_pc_moved(true);
     3
@@ -872,7 +871,7 @@ pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
         || (z && flags.Z)
         || (c && flags.C)
     {
-        jr_n16(game_state);
+        jr_e8(game_state);
         return 3;
     }
     2
@@ -1109,4 +1108,43 @@ pub fn stop(game_state: &mut GameState) -> u8 {
 // TODO HALT Implementation
 pub fn halt(game_state: &mut GameState) -> u8 {
     0
+}
+
+pub fn interrupt_handler(game_state: &mut GameState) {
+    let i_flag = game_state.read(0xFF0F);
+    if (i_flag << 3) != 0 {
+	game_state.set_interrupts(false); 
+	let jump_addr;
+	if i_flag & INT_VBLANK != 0 {
+	    game_state.write(i_flag & !INT_VBLANK, 0xFF0F);
+	    jump_addr = 0x0040;
+
+	} else if i_flag & INT_LCD != 0 {
+	    game_state.write(i_flag & !INT_LCD, 0xFF0F);
+	    jump_addr = 0x0048;
+
+	} else if i_flag & INT_TIMER != 0 {
+	    game_state.write(i_flag & !INT_TIMER, 0xFF0F);
+	    jump_addr = 0x0050;
+
+	} else if i_flag & INT_SERIAL != 0 {
+	    game_state.write(i_flag & !INT_SERIAL, 0xFF0F);
+	    jump_addr = 0x0058;
+
+	} else {
+	    game_state.write(i_flag & !INT_JOYPAD, 0xFF0F);
+	    jump_addr = 0x0060;
+	}
+	
+	let curr_addr = game_state.get_register16(Register::PC);
+	let lsb = (curr_addr & 0x00FF) as u8;
+	let msb = (curr_addr >> 8) as u8;
+	dec_sp(game_state);
+	game_state.write(msb, game_state.get_register16(Register::SP));
+	dec_sp(game_state);
+	game_state.write(lsb, game_state.get_register16(Register::SP));
+	game_state.set_register16(Register::PC, jump_addr);
+	game_state.set_pc_moved(true);
+	game_state.update_clock(5);
+    }
 }

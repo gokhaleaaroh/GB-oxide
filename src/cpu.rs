@@ -86,7 +86,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::D),                // 0x15
                 |s: &mut GameState| ld_r8_n8(s, Register::D),              // 0x16
                 |s: &mut GameState| rla(s),                                // 0x17
-                |s: &mut GameState| jr_n16(s),                             // 0x18
+                |s: &mut GameState| jr_e8(s),                             // 0x18
                 |s: &mut GameState| add_hl_r16(s, Register::DE),           // 0x19
                 |s: &mut GameState| ld_a_r16addr(s, Register::DE),         // 0x1A
                 |s: &mut GameState| dec_r16(s, Register::DE),              // 0x1B
@@ -513,7 +513,6 @@ impl CPU {
                 |s: &mut GameState| res_u3_r8(s, 7, Register::L), // 0xBD
                 |s: &mut GameState| res_u3_hladdr(s, 7),          // 0xBE
                 |s: &mut GameState| res_u3_r8(s, 7, Register::A), // 0xBF
-                // TODO Below
                 |s: &mut GameState| set_u3_r8(s, 0, Register::B), // 0xC0
                 |s: &mut GameState| set_u3_r8(s, 0, Register::C), // 0xC1
                 |s: &mut GameState| set_u3_r8(s, 0, Register::D), // 0xC2
@@ -589,21 +588,29 @@ impl CPU {
     pub fn step(&self, game_state: &mut GameState) -> u8 {
         let curr_pc = game_state.get_register16(Register::PC);
         let next_instruction = game_state.read(curr_pc);
+        print!("PC: 0x{:04X}, OP: 0x{:02X}", curr_pc, next_instruction);
         let cycles;
 
         let mut advance_amount = 1;
         if next_instruction != 0xCB {
-            cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
             if self.two_byte_ins.contains(&next_instruction) {
                 advance_amount = 2;
+                print!(", Byte: 0x{:02X} ", game_state.read(curr_pc + 1));
             } else if self.three_byte_ins.contains(&next_instruction) {
                 advance_amount = 3;
+                print!(
+                    ", Bytes: 0x{:02X}, 0x{:02X} ",
+                    game_state.read(curr_pc + 1),
+                    game_state.read(curr_pc + 2)
+                );
             }
+            cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
         } else {
             let actual_ins = game_state.read(curr_pc + 1);
             cycles = (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
             advance_amount = 2;
         }
+        println!();
 
         if game_state.pc_moved() {
             advance_amount = 0;

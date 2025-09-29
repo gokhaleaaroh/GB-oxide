@@ -10,3 +10,9 @@ pub const LCDC_TILE_WIN_DATA: u8 = 0b0100_0000;
 pub const SPRITE_PRIORITY: u8 = 0b1000_0000;
 pub const SPRITE_Y_FLIP: u8 = 0b0100_0000;
 pub const SPRITE_X_FLIP: u8 = 0b0010_0000;
+
+pub const INT_VBLANK: u8 = 0b0000_0001;
+pub const INT_LCD: u8 = 0b0000_0010;
+pub const INT_TIMER: u8 = 0b0000_0100;
+pub const INT_SERIAL: u8 = 0b0000_1000;
+pub const INT_JOYPAD: u8 = 0b0001_0000;

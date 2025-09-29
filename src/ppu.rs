@@ -62,7 +62,7 @@ impl PPU {
         Self {
             dot_counter: 0,
             active_sprites: [NONE; 10],
-            current_fb: vec![],
+            current_fb: vec![0; 144*160],
         }
     }
 
@@ -81,6 +81,7 @@ impl PPU {
 
             let sprite_loc = (i * 4) as u8;
             let obj_entry = game_state.get_oam_entry(sprite_loc);
+	    if obj_entry[0] < 16 { continue; }
             let y_min = obj_entry[0] - 16;
             let y_max = y_min + sprite_height;
             let ly = game_state.get_ly();
@@ -200,7 +201,7 @@ impl PPU {
                 let next_scanline = self.gen_scanline(game_state);
 
                 for i in 0..160 {
-                    self.current_fb[(ly * 160 + i) as usize] =
+                    self.current_fb[(ly as u16 * 160u16 + i) as usize] =
                         gb_color_to_u32(next_scanline[i as usize]);
                 }
 
