@@ -205,15 +205,17 @@ impl PPU {
                         gb_color_to_u32(next_scanline[i as usize]);
                 }
 
-                if ly == 143 {
-                    // Buffer finished, sending to minifb
-                    return true;
-                }
+                
             } else if ly > MAX_SL {
                 game_state.set_ly(0);
             }
 
             game_state.inc_ly(1);
+	    if ly == 143 { // VBLANK
+		game_state.write(game_state.read(0xFF0F) | INT_VBLANK, 0xFF0F);
+		println!("VBLANK");
+		return true;
+	    }
         }
         false
     }

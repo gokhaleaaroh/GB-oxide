@@ -586,6 +586,7 @@ impl CPU {
     }
 
     pub fn step(&self, game_state: &mut GameState) -> u8 {
+	interrupt_handler(game_state);
         let curr_pc = game_state.get_register16(Register::PC);
         let next_instruction = game_state.read(curr_pc);
         print!("PC: 0x{:04X}, OP: 0x{:02X}", curr_pc, next_instruction);
@@ -606,6 +607,7 @@ impl CPU {
             }
             cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
         } else {
+	    print!(", Code: 0x{:02X} ", game_state.read(curr_pc + 1));
             let actual_ins = game_state.read(curr_pc + 1);
             cycles = (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
             advance_amount = 2;

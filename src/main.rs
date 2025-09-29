@@ -28,6 +28,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Limit to max ~60 fps update rate
     window.set_target_fps(60);
 
+    // for i in 0..5000 {
+    // 	println!("OP 0x{:04X}: 0x{:02X}", 0x0100 + i, game_state.read(0x0100 + i as u16));
+    // }
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
 	let cycles = cpu.step(&mut game_state);
 	let update = ppu.step(4*cycles, &mut game_state);

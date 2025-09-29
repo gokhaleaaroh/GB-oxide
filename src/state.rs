@@ -92,15 +92,15 @@ impl IORegisters {
     fn reset_registers() -> Self {
         Self {
             joyp: 0,
-            lcdc: 0,
+            lcdc: 0x91,
             ly: 0,
             lyc: 0,
-            stat: 0,
+            stat: 0x85,
             scy: 0,
             scx: 0,
             wy: 0,
             wx: 0,
-            bgp: 0,
+            bgp: 0xFC,
             obp0: 0,
             obp1: 0,
         }
@@ -129,6 +129,7 @@ struct Gameboy {
     ime: bool,
     i_enable: u8,
     i_flag: u8,
+    dma: u8, 
     registers: Registers,
     io_registers: IORegisters,
     memory: Memory,
@@ -313,6 +314,14 @@ impl GameState {
         }
     }
 
+    fn dma_oam(&mut self, value: u8) {
+	self.gb.dma = value;
+	let start = (value as u16) << 8;
+	for i in 0..160 {
+	    self.gb.memory.oam[i] = self.read(start + i as u16);
+	}
+    }
+
     pub fn read(&self, addr: u16) -> u8 {
         match addr {
             0x0000..=0x3FFF => self.cart.rom[addr as usize],
@@ -345,6 +354,8 @@ impl GameState {
 	    0xFF42 => self.gb.io_registers.scy,
 
 	    0xFF43 => self.gb.io_registers.scy,
+
+	    0xFF46 => self.gb.dma,
 
 	    0xFF4A => self.gb.io_registers.wy,
 
@@ -383,6 +394,8 @@ impl GameState {
 	    0xFF42 => self.gb.io_registers.scy = value,
 
 	    0xFF43 => self.gb.io_registers.scy = value,
+
+	    0xFF46 => self.dma_oam(value),
 
 	    0xFF4A => self.gb.io_registers.wy = value,
 

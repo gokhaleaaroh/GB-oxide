@@ -1,7 +1,7 @@
 // https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7 - reference manual
 
+use crate::constants::{INT_JOYPAD, INT_LCD, INT_SERIAL, INT_TIMER, INT_VBLANK};
 use crate::state::{Flags, GameState, Register, CC};
-use crate::constants::{INT_VBLANK, INT_LCD, INT_TIMER, INT_SERIAL, INT_JOYPAD};
 
 // Load instructions
 pub fn ld_r8_r8(game_state: &mut GameState, r1: Register, r2: Register) -> u8 {
@@ -112,27 +112,39 @@ pub fn ldh_a_caddr(game_state: &mut GameState) -> u8 {
 
 pub fn ld_hliaddr_a(game_state: &mut GameState) -> u8 {
     ld_hladdr_r8(game_state, Register::A);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_add(1));
+    game_state.set_register16(
+        Register::HL,
+        game_state.get_register16(Register::HL).wrapping_add(1),
+    );
 
     2
 }
 
 pub fn ld_hldaddr_a(game_state: &mut GameState) -> u8 {
     ld_hladdr_r8(game_state, Register::A);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_sub(1));
+    game_state.set_register16(
+        Register::HL,
+        game_state.get_register16(Register::HL).wrapping_sub(1),
+    );
 
     2
 }
 
 pub fn ld_a_hld(game_state: &mut GameState) -> u8 {
     ld_a_r16addr(game_state, Register::HL);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_sub(1));
+    game_state.set_register16(
+        Register::HL,
+        game_state.get_register16(Register::HL).wrapping_sub(1),
+    );
     2
 }
 
 pub fn ld_a_hli(game_state: &mut GameState) -> u8 {
     ld_a_r16addr(game_state, Register::HL);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_add(1));
+    game_state.set_register16(
+        Register::HL,
+        game_state.get_register16(Register::HL).wrapping_add(1),
+    );
     2
 }
 
@@ -244,12 +256,12 @@ pub fn add_hl_r16(game_state: &mut GameState, r: Register) -> u8 {
 
 // 8-bit difference, bit 4 borrow, final borrow
 fn sub8(a: u8, b: u8, carry_in: u8) -> (u8, bool, bool) {
-    let result = ((a as i16) - (b as i16)) as u16;
+    let result = a.wrapping_sub(b);
 
     let half_borrow = (a & 0xF) < (b & 0xF) + carry_in;
     let borrow = (a as u16) < (b as u16 + carry_in as u16);
 
-    (result as u8, half_borrow, borrow)
+    (result, half_borrow, borrow)
 }
 
 fn general_sub_a_n8(game_state: &mut GameState, val: u8, borrow_on: bool, discard: bool) {
@@ -340,8 +352,14 @@ pub fn cp_a_n8(game_state: &mut GameState) -> u8 {
 
 // Decrease Instructions
 pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
+    if matches!(r, Register::B) {
+        println!("Current val of Reg B: {}", game_state.get_register8(r));
+    }
     let (result, half_borrow, _) = sub8(game_state.get_register8(r), 1, 0);
     game_state.set_register8(r, result);
+    if matches!(r, Register::B) {
+        println!("New val of Reg B: {}", game_state.get_register8(r));
+    }
 
     let new_flags = Flags {
         Z: result == 0,
@@ -351,6 +369,7 @@ pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
     };
 
     game_state.set_flags(&new_flags);
+    println!("NEW Z_FLAG: {}", game_state.get_flags().Z);
     1
 }
 
@@ -817,10 +836,10 @@ pub fn call_n16(game_state: &mut GameState) -> u8 {
 
 pub fn call_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if (matches!(CC::Z, cc) && flags.Z)
-        || (matches!(CC::NZ, cc) && !flags.Z)
-        || (matches!(CC::C, cc) && flags.C)
-        || (matches!(CC::NC, cc) && !flags.C)
+    if (matches!(cc, CC::Z) && flags.Z)
+        || (matches!(cc, CC::NZ) && !flags.Z)
+        || (matches!(cc, CC::C) && flags.C)
+        || (matches!(cc, CC::NC) && !flags.C)
     {
         call_n16(game_state);
         return 6;
@@ -845,10 +864,10 @@ pub fn jp_n16(game_state: &mut GameState) -> u8 {
 
 pub fn jp_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if (matches!(CC::Z, cc) && flags.Z)
-        || (matches!(CC::NZ, cc) && !flags.Z)
-        || (matches!(CC::C, cc) && flags.C)
-        || (matches!(CC::NC, cc) && !flags.C)
+    if (matches!(cc, CC::Z, ) && flags.Z)
+        || (matches!(cc, CC::NZ, ) && !flags.Z)
+        || (matches!(cc, CC::C) && flags.C)
+        || (matches!(cc, CC::NC) && !flags.C)
     {
         jp_n16(game_state);
         return 4;
@@ -858,7 +877,7 @@ pub fn jp_cc(game_state: &mut GameState, cc: CC) -> u8 {
 
 pub fn jr_e8(game_state: &mut GameState) -> u8 {
     let offset = game_state.read(game_state.get_register16(Register::PC) + 1) as i8;
-    let jump_addr = (game_state.get_register16(Register::PC) as i16) + offset as i16;
+    let jump_addr = (game_state.get_register16(Register::PC) as i16 + 2) + offset as i16;
     game_state.set_register16(Register::PC, jump_addr as u16);
     game_state.set_pc_moved(true);
     3
@@ -866,12 +885,13 @@ pub fn jr_e8(game_state: &mut GameState) -> u8 {
 
 pub fn jr_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if (matches!(CC::Z, cc) && flags.Z)
-        || (matches!(CC::NZ, cc) && !flags.Z)
-        || (matches!(CC::C, cc) && flags.C)
-        || (matches!(CC::NC, cc) && !flags.C)
+    if (matches!(cc, CC::Z) && flags.Z)
+        || (matches!(cc, CC::NZ) && !flags.Z)
+        || (matches!(cc, CC::C) && flags.C)
+        || (matches!(cc, CC::NC) && !flags.C)
     {
-	print!(" JUMPING RELATIVELY ");
+        print!(" JUMPING RELATIVELY ");
+	println!("Z_FLAG: {}", flags.Z);
         jr_e8(game_state);
         return 3;
     }
@@ -893,10 +913,10 @@ pub fn reti(game_state: &mut GameState) -> u8 {
 
 pub fn ret_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if (matches!(CC::Z, cc) && flags.Z)
-        || (matches!(CC::NZ, cc) && !flags.Z)
-        || (matches!(CC::C, cc) && flags.C)
-        || (matches!(CC::NC, cc) && !flags.C)
+    if (matches!(cc, CC::Z) && flags.Z)
+        || (matches!(cc, CC::NZ) && !flags.Z)
+        || (matches!(cc, CC::C) && flags.C)
+        || (matches!(cc, CC::NC) && !flags.C)
     {
         ret(game_state);
         return 5;
@@ -1114,38 +1134,34 @@ pub fn halt(game_state: &mut GameState) -> u8 {
 pub fn interrupt_handler(game_state: &mut GameState) {
     let i_flag = game_state.read(0xFF0F);
     if (i_flag << 3) != 0 {
-	game_state.set_interrupts(false); 
-	let jump_addr;
-	if i_flag & INT_VBLANK != 0 {
-	    game_state.write(i_flag & !INT_VBLANK, 0xFF0F);
-	    jump_addr = 0x0040;
+        game_state.set_interrupts(false);
+        let jump_addr;
+        if i_flag & INT_VBLANK != 0 {
+            game_state.write(i_flag & !INT_VBLANK, 0xFF0F);
+            jump_addr = 0x0040;
+        } else if i_flag & INT_LCD != 0 {
+            game_state.write(i_flag & !INT_LCD, 0xFF0F);
+            jump_addr = 0x0048;
+        } else if i_flag & INT_TIMER != 0 {
+            game_state.write(i_flag & !INT_TIMER, 0xFF0F);
+            jump_addr = 0x0050;
+        } else if i_flag & INT_SERIAL != 0 {
+            game_state.write(i_flag & !INT_SERIAL, 0xFF0F);
+            jump_addr = 0x0058;
+        } else {
+            game_state.write(i_flag & !INT_JOYPAD, 0xFF0F);
+            jump_addr = 0x0060;
+        }
 
-	} else if i_flag & INT_LCD != 0 {
-	    game_state.write(i_flag & !INT_LCD, 0xFF0F);
-	    jump_addr = 0x0048;
-
-	} else if i_flag & INT_TIMER != 0 {
-	    game_state.write(i_flag & !INT_TIMER, 0xFF0F);
-	    jump_addr = 0x0050;
-
-	} else if i_flag & INT_SERIAL != 0 {
-	    game_state.write(i_flag & !INT_SERIAL, 0xFF0F);
-	    jump_addr = 0x0058;
-
-	} else {
-	    game_state.write(i_flag & !INT_JOYPAD, 0xFF0F);
-	    jump_addr = 0x0060;
-	}
-	
-	let curr_addr = game_state.get_register16(Register::PC);
-	let lsb = (curr_addr & 0x00FF) as u8;
-	let msb = (curr_addr >> 8) as u8;
-	dec_sp(game_state);
-	game_state.write(msb, game_state.get_register16(Register::SP));
-	dec_sp(game_state);
-	game_state.write(lsb, game_state.get_register16(Register::SP));
-	game_state.set_register16(Register::PC, jump_addr);
-	game_state.set_pc_moved(true);
-	game_state.update_clock(5);
+        let curr_addr = game_state.get_register16(Register::PC);
+        let lsb = (curr_addr & 0x00FF) as u8;
+        let msb = (curr_addr >> 8) as u8;
+        dec_sp(game_state);
+        game_state.write(msb, game_state.get_register16(Register::SP));
+        dec_sp(game_state);
+        game_state.write(lsb, game_state.get_register16(Register::SP));
+        game_state.set_register16(Register::PC, jump_addr);
+        game_state.set_pc_moved(true);
+        game_state.update_clock(5);
     }
 }
