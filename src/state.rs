@@ -1,5 +1,5 @@
-use std::fs;
 use crate::constants::*;
+use std::fs;
 
 fn generate_16bit(lsb: u8, msb: u8) -> u16 {
     ((msb as u16) << 8) | (lsb as u16)
@@ -83,23 +83,22 @@ struct IORegisters {
 
 impl IORegisters {
     fn reset_registers() -> Self {
-	Self {
-	    joyp: 0,
-	    lcdc: 0,
-	    ly: 0,
-	    lyc: 0,
-	    stat: 0,
-	    scy: 0,
-	    scx: 0,
-	    wy: 0,
-	    wx: 0,
-	    bgp: 0,
-	    obp0: 0,
-	    obp1: 0,
-	}
+        Self {
+            joyp: 0,
+            lcdc: 0,
+            ly: 0,
+            lyc: 0,
+            stat: 0,
+            scy: 0,
+            scx: 0,
+            wy: 0,
+            wx: 0,
+            bgp: 0,
+            obp0: 0,
+            obp1: 0,
+        }
     }
 }
-
 
 struct Memory {
     wram: [u8; 0x2000],
@@ -133,10 +132,10 @@ impl Gameboy {
         Self {
             IME: false,
             registers: Registers::reset_registers(),
-	    io_registers: IORegisters::reset_registers(),
+            io_registers: IORegisters::reset_registers(),
             memory: Memory::reset_memory(),
             pc_moved: false,
-	    cycles: 0
+            cycles: 0,
         }
     }
 }
@@ -188,7 +187,7 @@ impl GameState {
     }
 
     pub fn get_register8(&self, reg: Register) -> u8 {
-	match reg {
+        match reg {
             Register::A => self.gb.registers.a,
             Register::F => self.gb.registers.f,
             Register::B => self.gb.registers.b,
@@ -201,18 +200,28 @@ impl GameState {
         }
     }
 
-
     pub fn get_register16(&self, reg: Register) -> u16 {
         match reg {
-            Register::AF => generate_16bit(self.get_register8(Register::F), self.get_register8(Register::A)),
-            Register::BC => generate_16bit(self.get_register8(Register::C), self.get_register8(Register::B)),
-            Register::DE => generate_16bit(self.get_register8(Register::E), self.get_register8(Register::D)),
-            Register::HL => generate_16bit(self.get_register8(Register::L), self.get_register8(Register::H)),
+            Register::AF => generate_16bit(
+                self.get_register8(Register::F),
+                self.get_register8(Register::A),
+            ),
+            Register::BC => generate_16bit(
+                self.get_register8(Register::C),
+                self.get_register8(Register::B),
+            ),
+            Register::DE => generate_16bit(
+                self.get_register8(Register::E),
+                self.get_register8(Register::D),
+            ),
+            Register::HL => generate_16bit(
+                self.get_register8(Register::L),
+                self.get_register8(Register::H),
+            ),
             Register::PC => self.gb.registers.pc,
             Register::SP => self.gb.registers.sp,
             _ => 0,
         }
-
     }
 
     pub fn set_register8(&mut self, reg: Register, val: u8) {
@@ -262,26 +271,26 @@ impl GameState {
         if flags.Z {
             self.gb.registers.f |= FLAG_Z;
         } else {
-	    self.gb.registers.f &= !FLAG_Z;
-	}
+            self.gb.registers.f &= !FLAG_Z;
+        }
 
         if flags.N {
             self.gb.registers.f |= FLAG_N;
         } else {
-	    self.gb.registers.f &= !FLAG_N;
-	}
+            self.gb.registers.f &= !FLAG_N;
+        }
 
         if flags.H {
             self.gb.registers.f |= FLAG_H;
         } else {
-	    self.gb.registers.f &= !FLAG_H;
-	}
+            self.gb.registers.f &= !FLAG_H;
+        }
 
         if flags.C {
             self.gb.registers.f |= FLAG_C;
         } else {
-	    self.gb.registers.f &= !FLAG_C;
-	}
+            self.gb.registers.f &= !FLAG_C;
+        }
     }
 
     pub fn get_flags(&self) -> Flags {
@@ -317,8 +326,7 @@ impl GameState {
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80],
 
-	    // TODO IO Registers and other memory mapped stuff
-
+            // TODO IO Registers and other memory mapped stuff
             _ => 0xFF,
         }
     }
@@ -331,7 +339,7 @@ impl GameState {
 
             0xA000..=0xBFFF => {
                 // TODO External RAM
-		()
+                ()
             }
 
             0xC000..=0xDFFF => self.gb.memory.wram[addr as usize - 0xC000] = value,
@@ -342,8 +350,7 @@ impl GameState {
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
 
-	    // TODO IO Registers and other memory mapped stuff
-
+            // TODO IO Registers and other memory mapped stuff
             _ => (),
         }
     }
@@ -361,61 +368,66 @@ impl GameState {
     }
 
     pub fn update_clock(&mut self, add_cycles: u8) {
-	self.gb.cycles += add_cycles as u128;
+        self.gb.cycles += add_cycles as u128;
     }
 
     pub fn get_oam_entry(&self, loc: u8) -> [u8; 4] {
-	let l = (loc % 0xA0) as usize;
-	return [self.gb.memory.oam[l], self.gb.memory.oam[l + 1], self.gb.memory.oam[l + 2], self.gb.memory.oam[l + 3]];
+        let l = (loc % 0xA0) as usize;
+        return [
+            self.gb.memory.oam[l],
+            self.gb.memory.oam[l + 1],
+            self.gb.memory.oam[l + 2],
+            self.gb.memory.oam[l + 3],
+        ];
     }
 
     pub fn get_lcdc(&self) -> u8 {
-	return self.gb.io_registers.lcdc;
+        return self.gb.io_registers.lcdc;
     }
 
     pub fn get_ly(&self) -> u8 {
-	return self.gb.io_registers.ly;
+        return self.gb.io_registers.ly;
     }
 
     pub fn get_scx(&self) -> u8 {
-	return self.gb.io_registers.scx;
+        return self.gb.io_registers.scx;
     }
 
     pub fn get_scy(&self) -> u8 {
-	return self.gb.io_registers.scy;
+        return self.gb.io_registers.scy;
     }
 
     pub fn get_wx(&self) -> u8 {
-	return self.gb.io_registers.wx;
+        return self.gb.io_registers.wx;
     }
 
     pub fn get_wy(&self) -> u8 {
-	return self.gb.io_registers.wy;
+        return self.gb.io_registers.wy;
     }
 
     pub fn inc_ly(&mut self, amount: u8) {
-	self.gb.io_registers.ly = (self.gb.io_registers.ly + amount) % 154;
+        self.gb.io_registers.ly = (self.gb.io_registers.ly + amount) % 154;
     }
 
     pub fn set_ly(&mut self, val: u8) {
-	self.gb.io_registers.ly = val;
+        self.gb.io_registers.ly = val;
     }
 
     pub fn get_tile_index(&self, tile_in_map: u16) -> u8 {
-	if self.gb.io_registers.lcdc & LCDC_TILE_MAP == 0 {
-	    return self.read(0x9800 + tile_in_map);
-	} else {
-	    return self.read(0x9C00 + tile_in_map);
-	}
+        if self.gb.io_registers.lcdc & LCDC_TILE_MAP == 0 {
+            return self.read(0x9800 + tile_in_map);
+        } else {
+            return self.read(0x9C00 + tile_in_map);
+        }
     }
 
     pub fn get_tile_from_addr(&self, addr: u16) -> [u16; 8] {
-	let mut result = [0u16; 8];
-	for i in 0..8 {
-	    let byte1 = self.gb.memory.vram[(addr + 2*i) as usize]; 
-	    let byte2 = self.gb.memory.vram[(addr + 2*i + 1) as usize];
-	    result[i as usize] = ((byte2 as u16) << 8) | (byte1 as u16);
-	}
-	result
+        let mut result = [0u16; 8];
+        for i in 0..8 {
+            let byte1 = self.gb.memory.vram[(addr + 2 * i) as usize];
+            let byte2 = self.gb.memory.vram[(addr + 2 * i + 1) as usize];
+            result[i as usize] = ((byte2 as u16) << 8) | (byte1 as u16);
+        }
+        result
     }
 }

@@ -16,7 +16,7 @@ fn gb_color_to_u32(code: u8) -> u32 {
         0b01 => 0xFF9BB7FF, // light blue
         0b10 => 0xFF4863A0, // medium blue
         0b11 => 0xFF0A0A40, // dark navy
-        _    => 0xFFFF00FF,
+        _ => 0xFFFF00FF,
     }
 }
 
@@ -53,17 +53,17 @@ fn get_tile_pixel(
 pub struct PPU {
     dot_counter: u128,
     active_sprites: [Option<OamEntry>; 10],
-    pub current_fb: Vec<u32>
+    pub current_fb: Vec<u32>,
 }
 
 impl PPU {
     pub fn initialize() -> Self {
-	const NONE: Option<OamEntry> = None;
-	Self {
-	    dot_counter: 0,
-	    active_sprites: [NONE; 10],
-	    current_fb: vec![]
-	}
+        const NONE: Option<OamEntry> = None;
+        Self {
+            dot_counter: 0,
+            active_sprites: [NONE; 10],
+            current_fb: vec![],
+        }
     }
 
     fn oam_scan(&mut self, game_state: &mut GameState) {
@@ -134,9 +134,9 @@ impl PPU {
             }
 
             for i in 0..10 {
-		if self.active_sprites[i].is_none() {
-		    continue;
-		}
+                if self.active_sprites[i].is_none() {
+                    continue;
+                }
                 let sprite_top = self.active_sprites[i].unwrap().y_pos - 16;
                 let sprite_left = self.active_sprites[i].unwrap().x_pos - 8;
                 let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
@@ -191,28 +191,29 @@ impl PPU {
 
     // return true if new frame is ready
     pub fn step(&mut self, cycles: u8, game_state: &mut GameState) -> bool {
-        self.dot_counter += 4*(cycles as u128);
+        self.dot_counter += cycles as u128;
         while self.dot_counter >= DOTS_PER_SL as u128 {
             self.dot_counter -= DOTS_PER_SL as u128;
             let ly = game_state.get_ly();
             if ly < VISIBLE_SL {
                 self.oam_scan(game_state);
-		let next_scanline = self.gen_scanline(game_state);
+                let next_scanline = self.gen_scanline(game_state);
 
-		for i in 0..160 {
-		    self.current_fb[(ly*160 + i) as usize] = gb_color_to_u32(next_scanline[i as usize]);
-		}
+                for i in 0..160 {
+                    self.current_fb[(ly * 160 + i) as usize] =
+                        gb_color_to_u32(next_scanline[i as usize]);
+                }
 
-		if ly == 143 { // Buffer finished, sending to minifb
-		    return true;
-		}
-		
+                if ly == 143 {
+                    // Buffer finished, sending to minifb
+                    return true;
+                }
             } else if ly > MAX_SL {
                 game_state.set_ly(0);
             }
 
-	    game_state.inc_ly(1);
+            game_state.inc_ly(1);
         }
-	false
+        false
     }
 }

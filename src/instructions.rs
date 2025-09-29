@@ -123,7 +123,8 @@ pub fn ld_hldaddr_a(game_state: &mut GameState) -> u8 {
     2
 }
 
-pub fn ld_a_hld(game_state: &mut GameState) -> u8 { ld_a_r16addr(game_state, Register::HL);
+pub fn ld_a_hld(game_state: &mut GameState) -> u8 {
+    ld_a_r16addr(game_state, Register::HL);
     game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
     2
 }
@@ -821,8 +822,8 @@ pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
         || (c && flags.C)
     {
         call_n16(game_state);
-	return 6;
-    } 
+        return 6;
+    }
     3
 }
 
@@ -849,7 +850,7 @@ pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
         || (c && flags.C)
     {
         jp_n16(game_state);
-	return 4;
+        return 4;
     }
     3
 }
@@ -872,7 +873,7 @@ pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
         || (c && flags.C)
     {
         jr_n16(game_state);
-	return 3;
+        return 3;
     }
     2
 }
@@ -898,7 +899,7 @@ pub fn ret_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
         || (c && flags.C)
     {
         ret(game_state);
-	return 5;
+        return 5;
     }
     2
 }
@@ -1067,26 +1068,45 @@ pub fn daa(game_state: &mut GameState) -> u8 {
 
     let mut adjustment: i16 = 0;
     let a_val = game_state.get_register8(Register::A);
-    let mut new_flags = Flags{ Z: flags.Z, N: flags.N, H: false, C: flags.C};
+    let mut new_flags = Flags {
+        Z: flags.Z,
+        N: flags.N,
+        H: false,
+        C: flags.C,
+    };
 
     if flags.N {
-	if flags.H { adjustment += 0x06 };
-	if flags.C { adjustment += 0x60 };
+        if flags.H {
+            adjustment += 0x06
+        };
+        if flags.C {
+            adjustment += 0x60
+        };
     } else {
-	if flags.H || (a_val & 0x0F) > 0x09 { adjustment += 0x06; }
-	if flags.C || a_val > 0x99 {  adjustment += 0x60; new_flags.C = true }
-
+        if flags.H || (a_val & 0x0F) > 0x09 {
+            adjustment += 0x06;
+        }
+        if flags.C || a_val > 0x99 {
+            adjustment += 0x60;
+            new_flags.C = true
+        }
     }
 
     let result = ((a_val as i16) - (adjustment)) as u16 as u8;
     game_state.set_register8(Register::A, result);
 
-    if result == 0 { new_flags.Z = true; }
+    if result == 0 {
+        new_flags.Z = true;
+    }
     game_state.set_flags(&new_flags);
     1
 }
 
-pub fn stop(game_state: &mut GameState) -> u8 { 0 }
+pub fn stop(game_state: &mut GameState) -> u8 {
+    0
+}
 
 // TODO HALT Implementation
-pub fn halt(game_state: &mut GameState) -> u8 { 0 }
+pub fn halt(game_state: &mut GameState) -> u8 {
+    0
+}

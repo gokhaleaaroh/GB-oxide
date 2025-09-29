@@ -2,46 +2,42 @@ use std::error::Error;
 mod constants;
 mod cpu;
 mod instructions;
-mod state;
 mod ppu;
-use state::GameState;
+mod state;
 use cpu::CPU;
-use ppu::PPU;
 use minifb::{Key, Window, WindowOptions};
+use ppu::PPU;
+use state::GameState;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // let cart = state::Cartridge::load_rom("roms/tetris.gb")?;
-    let mut new_game = GameState::start_game("/home/aarohg/Projects/my-emulator/roms/tetris.gb")?;
-    let cpu = CPU::initialize(); 
-    let ppu = PPU::initialize();
+    let mut game_state = GameState::start_game("/home/aarohg/Projects/my-emulator/roms/tetris.gb")?;
+    let cpu = CPU::initialize();
+    let mut ppu = PPU::initialize();
 
-    // let mut window = Window::new(
-    // 	"Test - ESC to exit",
-    // 	160,
-    // 	144,
-    // 	WindowOptions::default(),
-    // )
-    // 	.unwrap_or_else(|e| {
-    // 	    panic!("{}", e);
-    // 	});
+    let mut window = Window::new(
+    	"Test - ESC to exit",
+    	160,
+    	144,
+    	WindowOptions::default(),
+    )
+    	.unwrap_or_else(|e| {
+    	    panic!("{}", e);
+    	});
 
-    // // Limit to max ~60 fps update rate
-    // window.set_target_fps(60);
+    // Limit to max ~60 fps update rate
+    window.set_target_fps(60);
 
-    // while window.is_open() && !window.is_key_down(Key::Escape) {
-    // 	for i in buffer.iter_mut() {
-    // 	    *i = 0x32a852; // write something more funny here!
-    //     }
-    // 	
-    //     // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
-    // 	window
-    // 	    .update_with_buffer(&buffer, 160, 144)
-    // 	    .unwrap();
-    // }
-    // 
-    // cpu.main_loop(&mut new_game);
-
-
-
+    while window.is_open() && !window.is_key_down(Key::Escape) {
+	let cycles = cpu.step(&mut game_state);
+	let update = ppu.step(4*cycles, &mut game_state);
+        // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
+	if update {
+	    window
+		.update_with_buffer(&ppu.current_fb, 160, 144)
+		.unwrap();
+	}
+    }
+    
     Ok(())
 }
