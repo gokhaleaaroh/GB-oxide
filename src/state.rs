@@ -23,6 +23,13 @@ pub enum Register {
     SP,
 }
 
+pub enum CC {
+    Z,
+    NZ,
+    C,
+    NC
+}
+
 pub struct Flags {
     pub Z: bool,
     pub N: bool,

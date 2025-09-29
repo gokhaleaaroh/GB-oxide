@@ -1,5 +1,5 @@
 use crate::instructions::*;
-use crate::state::{GameState, Register};
+use crate::state::{GameState, Register, CC};
 use std::collections::HashSet;
 
 type InstructionWrapper = fn(&mut GameState) -> u8;
@@ -94,7 +94,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::E),                // 0x1D
                 |s: &mut GameState| ld_r8_n8(s, Register::E),              // 0x1E
                 |s: &mut GameState| rra(s),                                // 0x1F
-                |s: &mut GameState| jr_cc(s, true, true, false),           // 0x20
+                |s: &mut GameState| jr_cc(s, CC::NZ),           // 0x20
                 |s: &mut GameState| ld_r16_n16(s, Register::HL),           // 0x21
                 |s: &mut GameState| ld_hliaddr_a(s),                       // 0x22
                 |s: &mut GameState| inc_r16(s, Register::HL),              // 0x23
@@ -102,7 +102,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::H),                // 0x25
                 |s: &mut GameState| ld_r8_n8(s, Register::H),              // 0x26
                 |s: &mut GameState| daa(s),                                // 0x27
-                |s: &mut GameState| jr_cc(s, true, false, false),          // 0x28
+                |s: &mut GameState| jr_cc(s, CC::Z),          // 0x28
                 |s: &mut GameState| add_hl_r16(s, Register::HL),           // 0x29
                 |s: &mut GameState| ld_a_hli(s),                           // 0x2A
                 |s: &mut GameState| dec_r16(s, Register::HL),              // 0x2B
@@ -110,7 +110,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::L),                // 0x2D
                 |s: &mut GameState| ld_r8_n8(s, Register::L),              // 0x2E
                 |s: &mut GameState| cpl(s),                                // 0x2F
-                |s: &mut GameState| jr_cc(s, false, true, true),           // 0x30
+                |s: &mut GameState| jr_cc(s, CC::NC),           // 0x30
                 |s: &mut GameState| ld_sp_n16addr(s),                      // 0x31
                 |s: &mut GameState| ld_hldaddr_a(s),                       // 0x32
                 |s: &mut GameState| inc_sp(s),                             // 0x33
@@ -118,7 +118,7 @@ impl CPU {
                 |s: &mut GameState| dec_hladdr(s),                         // 0x35
                 |s: &mut GameState| ld_hladdr_n8(s),                       // 0x36
                 |s: &mut GameState| scf(s),                                // 0x37
-                |s: &mut GameState| jr_cc(s, false, false, true),          // 0x38
+                |s: &mut GameState| jr_cc(s, CC::C),          // 0x38
                 |s: &mut GameState| add_hl_sp(s),                          // 0x39
                 |s: &mut GameState| ld_a_hld(s),                           // 0x3A
                 |s: &mut GameState| dec_sp(s),                             // 0x3B
@@ -254,35 +254,35 @@ impl CPU {
                 |s: &mut GameState| cp_a_r8(s, Register::L),               // 0xBD
                 |s: &mut GameState| cp_a_hladdr(s),                        // 0xBE
                 |s: &mut GameState| cp_a_r8(s, Register::A),               // 0xBF
-                |s: &mut GameState| ret_cc(s, true, true, false),          // 0xC0
+                |s: &mut GameState| ret_cc(s, CC::NZ),          // 0xC0
                 |s: &mut GameState| pop_r16(s, Register::BC),              // 0xC1
-                |s: &mut GameState| jp_cc(s, true, true, false),           // 0xC2
+                |s: &mut GameState| jp_cc(s, CC::NZ),           // 0xC2
                 |s: &mut GameState| jp_n16(s),                             // 0xC3
-                |s: &mut GameState| call_cc(s, true, true, false),         // 0xC4
+                |s: &mut GameState| call_cc(s, CC::NZ),         // 0xC4
                 |s: &mut GameState| push_r16(s, Register::BC),             // 0xC5
                 |s: &mut GameState| add_a_n8(s),                           // 0xC6
                 |s: &mut GameState| rst_vec(s, 0x00),                      // 0xC7
-                |s: &mut GameState| ret_cc(s, true, false, false),         // 0xC8
+                |s: &mut GameState| ret_cc(s, CC::Z),         // 0xC8
                 |s: &mut GameState| ret(s),                                // 0xC9
-                |s: &mut GameState| jp_cc(s, true, false, false),          // 0xCA
+                |s: &mut GameState| jp_cc(s, CC::Z),          // 0xCA
                 |_: &mut GameState| 1,                                     // 0xCB PREFIX!
-                |s: &mut GameState| call_cc(s, true, false, false),        // 0xCC
+                |s: &mut GameState| call_cc(s, CC::Z),        // 0xCC
                 |s: &mut GameState| call_n16(s),                           // 0xCD
                 |s: &mut GameState| adc_a_n8(s),                           // 0xCE
                 |s: &mut GameState| rst_vec(s, 0x08),                      // 0xCF
-                |s: &mut GameState| ret_cc(s, false, true, true),          // 0xD0
+                |s: &mut GameState| ret_cc(s, CC::NC),          // 0xD0
                 |s: &mut GameState| pop_r16(s, Register::DE),              // 0xD1
-                |s: &mut GameState| jp_cc(s, false, true, true),           // 0xD2
+                |s: &mut GameState| jp_cc(s, CC::NC),           // 0xD2
                 |_: &mut GameState| 1,                                     // 0xD3 Blank
-                |s: &mut GameState| call_cc(s, false, true, true),         // 0xD4
+                |s: &mut GameState| call_cc(s, CC::NC),         // 0xD4
                 |s: &mut GameState| push_r16(s, Register::DE),             // 0xD5
                 |s: &mut GameState| sub_a_n8(s),                           // 0xD6
                 |s: &mut GameState| rst_vec(s, 0x10),                      // 0xD7
-                |s: &mut GameState| ret_cc(s, false, false, true),         // 0xD8
+                |s: &mut GameState| ret_cc(s, CC::C),         // 0xD8
                 |s: &mut GameState| reti(s),                               // 0xD9
-                |s: &mut GameState| jp_cc(s, false, false, true),          // 0xDA
+                |s: &mut GameState| jp_cc(s, CC::C),          // 0xDA
                 |_: &mut GameState| 1,                                     // 0xDB Blank
-                |s: &mut GameState| call_cc(s, false, false, true),        // 0xDC
+                |s: &mut GameState| call_cc(s, CC::C),        // 0xDC
                 |_: &mut GameState| 1,                                     // 0xDD Blank
                 |s: &mut GameState| sbc_a_n8(s),                           // 0xDE
                 |s: &mut GameState| rst_vec(s, 0x18),                      // 0xDF

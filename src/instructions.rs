@@ -1,6 +1,6 @@
 // https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7 - reference manual
 
-use crate::state::{Flags, GameState, Register};
+use crate::state::{Flags, GameState, Register, CC};
 use crate::constants::{INT_VBLANK, INT_LCD, INT_TIMER, INT_SERIAL, INT_JOYPAD};
 
 // Load instructions
@@ -112,27 +112,27 @@ pub fn ldh_a_caddr(game_state: &mut GameState) -> u8 {
 
 pub fn ld_hliaddr_a(game_state: &mut GameState) -> u8 {
     ld_hladdr_r8(game_state, Register::A);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) + 1);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_add(1));
 
     2
 }
 
 pub fn ld_hldaddr_a(game_state: &mut GameState) -> u8 {
     ld_hladdr_r8(game_state, Register::A);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_sub(1));
 
     2
 }
 
 pub fn ld_a_hld(game_state: &mut GameState) -> u8 {
     ld_a_r16addr(game_state, Register::HL);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) - 1);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_sub(1));
     2
 }
 
 pub fn ld_a_hli(game_state: &mut GameState) -> u8 {
     ld_a_r16addr(game_state, Register::HL);
-    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL) + 1);
+    game_state.set_register16(Register::HL, game_state.get_register16(Register::HL).wrapping_add(1));
     2
 }
 
@@ -815,12 +815,12 @@ pub fn call_n16(game_state: &mut GameState) -> u8 {
     6
 }
 
-pub fn call_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
+pub fn call_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if ((n && z) && (flags.N && flags.Z))
-        || ((n && c) && (flags.N && flags.C))
-        || (z && flags.Z)
-        || (c && flags.C)
+    if (matches!(CC::Z, cc) && flags.Z)
+        || (matches!(CC::NZ, cc) && !flags.Z)
+        || (matches!(CC::C, cc) && flags.C)
+        || (matches!(CC::NC, cc) && !flags.C)
     {
         call_n16(game_state);
         return 6;
@@ -843,12 +843,12 @@ pub fn jp_n16(game_state: &mut GameState) -> u8 {
     4
 }
 
-pub fn jp_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
+pub fn jp_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if ((n && z) && (flags.N && flags.Z))
-        || ((n && c) && (flags.N && flags.C))
-        || (z && flags.Z)
-        || (c && flags.C)
+    if (matches!(CC::Z, cc) && flags.Z)
+        || (matches!(CC::NZ, cc) && !flags.Z)
+        || (matches!(CC::C, cc) && flags.C)
+        || (matches!(CC::NC, cc) && !flags.C)
     {
         jp_n16(game_state);
         return 4;
@@ -864,13 +864,14 @@ pub fn jr_e8(game_state: &mut GameState) -> u8 {
     3
 }
 
-pub fn jr_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
+pub fn jr_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if ((n && z) && (flags.N && flags.Z))
-        || ((n && c) && (flags.N && flags.C))
-        || (z && flags.Z)
-        || (c && flags.C)
+    if (matches!(CC::Z, cc) && flags.Z)
+        || (matches!(CC::NZ, cc) && !flags.Z)
+        || (matches!(CC::C, cc) && flags.C)
+        || (matches!(CC::NC, cc) && !flags.C)
     {
+	print!(" JUMPING RELATIVELY ");
         jr_e8(game_state);
         return 3;
     }
@@ -890,12 +891,12 @@ pub fn reti(game_state: &mut GameState) -> u8 {
     4
 }
 
-pub fn ret_cc(game_state: &mut GameState, z: bool, n: bool, c: bool) -> u8 {
+pub fn ret_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if ((n && z) && (flags.N && flags.Z))
-        || ((n && c) && (flags.N && flags.C))
-        || (z && flags.Z)
-        || (c && flags.C)
+    if (matches!(CC::Z, cc) && flags.Z)
+        || (matches!(CC::NZ, cc) && !flags.Z)
+        || (matches!(CC::C, cc) && flags.C)
+        || (matches!(CC::NC, cc) && !flags.C)
     {
         ret(game_state);
         return 5;
