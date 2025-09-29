@@ -143,6 +143,7 @@ impl Gameboy {
             ime: false,
 	    i_enable: 0,
 	    i_flag: 0,
+	    dma: 0,
             registers: Registers::reset_registers(),
             io_registers: IORegisters::reset_registers(),
             memory: Memory::reset_memory(),
