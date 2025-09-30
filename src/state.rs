@@ -354,7 +354,11 @@ impl GameState {
 
 	    0xFF42 => self.gb.io_registers.scy,
 
-	    0xFF43 => self.gb.io_registers.scy,
+	    0xFF43 => self.gb.io_registers.scx,
+
+	    0xFF44 => self.gb.io_registers.ly,
+
+	    0xFF45 => self.gb.io_registers.lyc,
 
 	    0xFF46 => self.gb.dma,
 
@@ -371,6 +375,8 @@ impl GameState {
     }
 
     pub fn write(&mut self, value: u8, addr: u16) {
+	if (addr >= 0x9800 && addr <= 0x9BFF) || (addr >= 0x9C00 && addr <= 0x9FFF) { println!("Writing TILE MAP"); }
+
         match addr {
             0x0000..=0x7FFF => (), // Read-Only!
 
@@ -386,6 +392,7 @@ impl GameState {
             0xE000..=0xFDFF => self.gb.memory.wram[addr as usize - 0xE000] = value,
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
+	    0xFF0F => self.gb.i_flag = value, 
 
             // TODO IO Registers and other memory mapped stuff
 	    0xFF40 => self.gb.io_registers.lcdc = value,
@@ -394,7 +401,9 @@ impl GameState {
 
 	    0xFF42 => self.gb.io_registers.scy = value,
 
-	    0xFF43 => self.gb.io_registers.scy = value,
+	    0xFF43 => self.gb.io_registers.scx = value,
+
+	    0xFF45 => self.gb.io_registers.lyc = value,
 
 	    0xFF46 => self.dma_oam(value),
 
@@ -404,14 +413,17 @@ impl GameState {
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
 
-
-
+	    0xFFFF => self.gb.i_enable = value,
             _ => (),
         }
     }
 
     pub fn set_interrupts(&mut self, on: bool) {
         self.gb.ime = on;
+    }
+
+    pub fn get_interrupts(&self) -> bool {
+	self.gb.ime
     }
 
     pub fn pc_moved(&mut self) -> bool {

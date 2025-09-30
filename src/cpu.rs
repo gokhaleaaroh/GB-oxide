@@ -16,6 +16,7 @@ impl CPU {
         let mut iibi: HashSet<u8> = HashSet::new();
         iibi.insert(0x06);
         iibi.insert(0x0E);
+        iibi.insert(0x10);
         iibi.insert(0x16);
         iibi.insert(0x18);
         iibi.insert(0x1E);
@@ -38,7 +39,6 @@ impl CPU {
         iibi.insert(0xF0);
         iibi.insert(0xF6);
         iibi.insert(0xF8);
-        iibi.insert(0xFE);
         iibi.insert(0xFE);
 
         let mut iiibi: HashSet<u8> = HashSet::new();
@@ -586,7 +586,9 @@ impl CPU {
     }
 
     pub fn step(&self, game_state: &mut GameState) -> u8 {
-	interrupt_handler(game_state);
+	if game_state.get_interrupts() {
+	    interrupt_handler(game_state);
+	}
         let curr_pc = game_state.get_register16(Register::PC);
         let next_instruction = game_state.read(curr_pc);
         print!("PC: 0x{:04X}, OP: 0x{:02X}", curr_pc, next_instruction);

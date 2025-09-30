@@ -15,15 +15,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cpu = CPU::initialize();
     let mut ppu = PPU::initialize();
 
-    let mut window = Window::new(
-    	"Test - ESC to exit",
-    	160,
-    	144,
-    	WindowOptions::default(),
-    )
-    	.unwrap_or_else(|e| {
-    	    panic!("{}", e);
-    	});
+    let mut window = Window::new("Test - ESC to exit", 160, 144, WindowOptions::default())
+        .unwrap_or_else(|e| {
+            panic!("{}", e);
+        });
 
     // Limit to max ~60 fps update rate
     window.set_target_fps(60);
@@ -33,15 +28,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     // }
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-	let cycles = cpu.step(&mut game_state);
-	let update = ppu.step(4*cycles, &mut game_state);
+        let cycles = cpu.step(&mut game_state);
+        let update = ppu.step(4 * cycles, &mut game_state);
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
-	if update {
-	    window
-		.update_with_buffer(&ppu.current_fb, 160, 144)
-		.unwrap();
-	}
+        if update {
+            window
+                .update_with_buffer(&ppu.current_fb, 160, 144)
+                .unwrap();
+        }
     }
-    
+
     Ok(())
 }

@@ -96,7 +96,8 @@ pub fn ld_a_n16addr(game_state: &mut GameState) -> u8 {
 
 pub fn ldh_a_n8addr(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
-    let addr = 0xFF00 | (lsb as u16);
+    let addr = 0xFF00 + (lsb as u16);
+    if addr == 0xFF44 { println!("LY: {}", game_state.get_ly()); }
     game_state.set_register8(Register::A, game_state.read(addr));
     3
 }
@@ -352,14 +353,8 @@ pub fn cp_a_n8(game_state: &mut GameState) -> u8 {
 
 // Decrease Instructions
 pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
-    if matches!(r, Register::B) {
-        println!("Current val of Reg B: {}", game_state.get_register8(r));
-    }
     let (result, half_borrow, _) = sub8(game_state.get_register8(r), 1, 0);
     game_state.set_register8(r, result);
-    if matches!(r, Register::B) {
-        println!("New val of Reg B: {}", game_state.get_register8(r));
-    }
 
     let new_flags = Flags {
         Z: result == 0,
@@ -369,7 +364,6 @@ pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
     };
 
     game_state.set_flags(&new_flags);
-    println!("NEW Z_FLAG: {}", game_state.get_flags().Z);
     1
 }
 
@@ -890,8 +884,6 @@ pub fn jr_cc(game_state: &mut GameState, cc: CC) -> u8 {
         || (matches!(cc, CC::C) && flags.C)
         || (matches!(cc, CC::NC) && !flags.C)
     {
-        print!(" JUMPING RELATIVELY ");
-	println!("Z_FLAG: {}", flags.Z);
         jr_e8(game_state);
         return 3;
     }
