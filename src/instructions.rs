@@ -990,12 +990,12 @@ pub fn add_sp_e8(game_state: &mut GameState) -> u8 {
 }
 
 pub fn dec_sp(game_state: &mut GameState) -> u8 {
-    game_state.set_register16(Register::SP, game_state.get_register16(Register::SP) - 1);
+    game_state.set_register16(Register::SP, game_state.get_register16(Register::SP).wrapping_sub(1));
     2
 }
 
 pub fn inc_sp(game_state: &mut GameState) -> u8 {
-    game_state.set_register16(Register::SP, game_state.get_register16(Register::SP) + 1);
+    game_state.set_register16(Register::SP, game_state.get_register16(Register::SP).wrapping_add(1));
     2
 }
 
@@ -1123,7 +1123,7 @@ pub fn halt(game_state: &mut GameState) -> u8 {
     0
 }
 
-pub fn interrupt_handler(game_state: &mut GameState) {
+pub fn interrupt_handler(game_state: &mut GameState) -> bool {
     let i_flag = game_state.read(0xFF0F);
     if (i_flag << 3) != 0 {
         game_state.set_interrupts(false);
@@ -1154,6 +1154,7 @@ pub fn interrupt_handler(game_state: &mut GameState) {
         game_state.write(lsb, game_state.get_register16(Register::SP));
         game_state.set_register16(Register::PC, jump_addr);
         game_state.set_pc_moved(true);
-        game_state.update_clock(5);
+        return true;
     }
+    false
 }

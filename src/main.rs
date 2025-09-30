@@ -4,6 +4,7 @@ mod cpu;
 mod instructions;
 mod ppu;
 mod state;
+mod logger;
 use cpu::CPU;
 use minifb::{Key, Window, WindowOptions};
 use ppu::PPU;

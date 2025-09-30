@@ -27,7 +27,7 @@ pub enum CC {
     Z,
     NZ,
     C,
-    NC
+    NC,
 }
 
 pub struct Flags {
@@ -67,7 +67,7 @@ impl Registers {
             h: 0x01,
             l: 0x4D,
             pc: 0x0100,
-            sp: 0xFFEE,
+            sp: 0xFFFE,
         }
     }
 }
@@ -101,8 +101,8 @@ impl IORegisters {
             wy: 0,
             wx: 0,
             bgp: 0xFC,
-            obp0: 0,
-            obp1: 0,
+            obp0: 0xFF,
+            obp1: 0xFF,
         }
     }
 }
@@ -129,7 +129,7 @@ struct Gameboy {
     ime: bool,
     i_enable: u8,
     i_flag: u8,
-    dma: u8, 
+    dma: u8,
     registers: Registers,
     io_registers: IORegisters,
     memory: Memory,
@@ -141,9 +141,9 @@ impl Gameboy {
     fn reset_gb() -> Self {
         Self {
             ime: false,
-	    i_enable: 0,
-	    i_flag: 0,
-	    dma: 0,
+            i_enable: 0,
+            i_flag: 0,
+            dma: 0,
             registers: Registers::reset_registers(),
             io_registers: IORegisters::reset_registers(),
             memory: Memory::reset_memory(),
@@ -316,11 +316,11 @@ impl GameState {
     }
 
     fn dma_oam(&mut self, value: u8) {
-	self.gb.dma = value;
-	let start = (value as u16) << 8;
-	for i in 0..160 {
-	    self.gb.memory.oam[i] = self.read(start + i as u16);
-	}
+        self.gb.dma = value;
+        let start = (value as u16) << 8;
+        for i in 0..160 {
+            self.gb.memory.oam[i] = self.read(start + i as u16);
+        }
     }
 
     pub fn read(&self, addr: u16) -> u8 {
@@ -345,37 +345,39 @@ impl GameState {
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00],
 
-	    0xFF0F => self.gb.i_flag,
+            0xFF0F => self.gb.i_flag,
 
             // TODO IO Registers and other memory mapped stuff
-	    0xFF40 => self.gb.io_registers.lcdc,
+            0xFF40 => self.gb.io_registers.lcdc,
 
-	    0xFF41 => self.gb.io_registers.stat,
+            0xFF41 => self.gb.io_registers.stat,
 
-	    0xFF42 => self.gb.io_registers.scy,
+            0xFF42 => self.gb.io_registers.scy,
 
-	    0xFF43 => self.gb.io_registers.scx,
+            0xFF43 => self.gb.io_registers.scx,
 
-	    0xFF44 => self.gb.io_registers.ly,
+            0xFF44 => self.gb.io_registers.ly,
 
-	    0xFF45 => self.gb.io_registers.lyc,
+            0xFF45 => self.gb.io_registers.lyc,
 
-	    0xFF46 => self.gb.dma,
+            0xFF46 => self.gb.dma,
 
-	    0xFF4A => self.gb.io_registers.wy,
+            0xFF4A => self.gb.io_registers.wy,
 
-	    0xFF4B => self.gb.io_registers.wx,
+            0xFF4B => self.gb.io_registers.wx,
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80],
 
-	    0xFFFF => self.gb.i_enable,
+            0xFFFF => self.gb.i_enable,
 
             _ => 0xFF,
         }
     }
 
     pub fn write(&mut self, value: u8, addr: u16) {
-	if (addr >= 0x9800 && addr <= 0x9BFF) || (addr >= 0x9C00 && addr <= 0x9FFF) { println!("Writing TILE MAP"); }
+        if (addr >= 0x9800 && addr <= 0x9BFF) || (addr >= 0x9C00 && addr <= 0x9FFF) {
+            println!("Writing TILE MAP");
+        }
 
         match addr {
             0x0000..=0x7FFF => (), // Read-Only!
@@ -392,28 +394,28 @@ impl GameState {
             0xE000..=0xFDFF => self.gb.memory.wram[addr as usize - 0xE000] = value,
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
-	    0xFF0F => self.gb.i_flag = value, 
+            0xFF0F => self.gb.i_flag = value,
 
             // TODO IO Registers and other memory mapped stuff
-	    0xFF40 => self.gb.io_registers.lcdc = value,
+            0xFF40 => self.gb.io_registers.lcdc = value,
 
-	    0xFF41 => self.gb.io_registers.stat = value,
+            0xFF41 => self.gb.io_registers.stat = value,
 
-	    0xFF42 => self.gb.io_registers.scy = value,
+            0xFF42 => self.gb.io_registers.scy = value,
 
-	    0xFF43 => self.gb.io_registers.scx = value,
+            0xFF43 => self.gb.io_registers.scx = value,
 
-	    0xFF45 => self.gb.io_registers.lyc = value,
+            0xFF45 => self.gb.io_registers.lyc = value,
 
-	    0xFF46 => self.dma_oam(value),
+            0xFF46 => self.dma_oam(value),
 
-	    0xFF4A => self.gb.io_registers.wy = value,
+            0xFF4A => self.gb.io_registers.wy = value,
 
-	    0xFF4B => self.gb.io_registers.wx = value,
+            0xFF4B => self.gb.io_registers.wx = value,
 
             0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
 
-	    0xFFFF => self.gb.i_enable = value,
+            0xFFFF => self.gb.i_enable = value,
             _ => (),
         }
     }
@@ -423,7 +425,15 @@ impl GameState {
     }
 
     pub fn get_interrupts(&self) -> bool {
-	self.gb.ime
+        self.gb.ime
+    }
+
+    pub fn get_i_flag(&self) -> u8 {
+        self.gb.i_flag
+    }
+
+    pub fn get_i_enable(&self) -> u8 {
+        self.gb.i_enable
     }
 
     pub fn pc_moved(&mut self) -> bool {

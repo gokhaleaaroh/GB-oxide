@@ -196,6 +196,7 @@ impl PPU {
         while self.dot_counter >= DOTS_PER_SL as u128 {
             self.dot_counter -= DOTS_PER_SL as u128;
             let ly = game_state.get_ly();
+	    if game_state.get_interrupts() { println!("Interrupts ON, LY: {ly}"); }
             if ly < VISIBLE_SL {
                 self.oam_scan(game_state);
                 let next_scanline = self.gen_scanline(game_state);

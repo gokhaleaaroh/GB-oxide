@@ -1,4 +1,5 @@
 use crate::instructions::*;
+use crate::logger::*;
 use crate::state::{GameState, Register, CC};
 use std::collections::HashSet;
 
@@ -313,7 +314,7 @@ impl CPU {
                 |s: &mut GameState| ld_hl_spe8(s),                         // 0xF8
                 |s: &mut GameState| ld_sp_hl(s),                           // 0xF9
                 |s: &mut GameState| ld_a_n16addr(s),                       // 0xFA
-                |s: &mut GameState| ei(s),                                 // 0xFB Blank
+                |s: &mut GameState| ei(s),                                 // 0xFB
                 |_: &mut GameState| 1,                                     // 0xFC Blank
                 |_: &mut GameState| 1,                                     // 0xFD Blank
                 |s: &mut GameState| cp_a_n8(s),                            // 0xFE
@@ -586,33 +587,36 @@ impl CPU {
     }
 
     pub fn step(&self, game_state: &mut GameState) -> u8 {
-	if game_state.get_interrupts() {
-	    interrupt_handler(game_state);
+	let mut interrupted = false;
+	if game_state.get_interrupts() && (game_state.get_i_flag() & game_state.get_i_enable() != 0) {
+	    interrupted = interrupt_handler(game_state);
 	}
         let curr_pc = game_state.get_register16(Register::PC);
         let next_instruction = game_state.read(curr_pc);
-        print!("PC: 0x{:04X}, OP: 0x{:02X}", curr_pc, next_instruction);
+        print!("PC: 0x{:04X}, OP: 0x{:02X}, SP: 0x{:04X}", curr_pc, next_instruction, game_state.get_register16(Register::SP));
         let cycles;
 
         let mut advance_amount = 1;
         if next_instruction != 0xCB {
             if self.two_byte_ins.contains(&next_instruction) {
                 advance_amount = 2;
-                print!(", Byte: 0x{:02X} ", game_state.read(curr_pc + 1));
+                print!(", Byte: 0x{:02X},      ", game_state.read(curr_pc + 1));
             } else if self.three_byte_ins.contains(&next_instruction) {
                 advance_amount = 3;
                 print!(
-                    ", Bytes: 0x{:02X}, 0x{:02X} ",
+                    ", Bytes: 0x{:02X}, 0x{:02X}",
                     game_state.read(curr_pc + 1),
                     game_state.read(curr_pc + 2)
                 );
-            }
+            } else { print!("                   "); }
             cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
+	    print!(", INS: {}", non_prefix_strings[next_instruction as usize]);
         } else {
 	    print!(", Code: 0x{:02X} ", game_state.read(curr_pc + 1));
             let actual_ins = game_state.read(curr_pc + 1);
             cycles = (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
             advance_amount = 2;
+	    print!(", INS: {}", cb_prefix_strings[next_instruction as usize]);
         }
         println!();
 
@@ -628,6 +632,6 @@ impl CPU {
             Register::PC,
             game_state.get_register16(Register::PC) + advance_amount,
         );
-        cycles
+        cycles + if interrupted { 5 } else { 0 }
     }
 }
