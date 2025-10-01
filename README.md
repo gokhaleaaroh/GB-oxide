@@ -7,11 +7,7 @@ Screenshots:
 
 <figure>
   <img src="Screenshots/Intro-Credits.jpeg" alt="">
-  <figcaption>The Introductory Credits to Tetris</figcaption>
 </figure>
-
-
 <figure>
   <img src="Screenshots/Tetris.png" alt="">
-  <figcaption>The Title Screen for Tetris</figcaption>
 </figure>
