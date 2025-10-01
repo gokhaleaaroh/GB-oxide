@@ -19,14 +19,14 @@ pub fn ld_r16_n16(game_state: &mut GameState, r1: Register) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let val = ((msb as u16) << 8) | (lsb as u16);
-    if matches!(r1, Register::HL) { println!("Wrote 0x{:04X} to register HL", val); }
+    // if matches!(r1, Register::HL) { println!("Wrote 0x{:04X} to register HL", val); }
     game_state.set_register16(r1, val);
-    if matches!(r1, Register::HL) { println!("New value of HL: 0x{:04X}", game_state.get_register16(r1)); }
+    // if matches!(r1, Register::HL) { println!("New value of HL: 0x{:04X}", game_state.get_register16(r1)); }
     2
 }
 
 pub fn ld_hladdr_r8(game_state: &mut GameState, r: Register) -> u8 {
-    println!("Writing to addr: 0x{:04X}", game_state.get_register16(Register::HL));
+    // println!("Writing to addr: 0x{:04X}", game_state.get_register16(Register::HL));
     game_state.write(
         game_state.get_register8(r),
         game_state.get_register16(Register::HL),
@@ -100,7 +100,8 @@ pub fn ld_a_n16addr(game_state: &mut GameState) -> u8 {
 pub fn ldh_a_n8addr(game_state: &mut GameState) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let addr = 0xFF00 + (lsb as u16);
-    if addr == 0xFF44 { println!("LY: {}", game_state.get_ly()); }
+    if addr == 0xFF44 { // println!("LY: {}", game_state.get_ly());
+    }
     game_state.set_register8(Register::A, game_state.read(addr));
     3
 }
@@ -359,8 +360,8 @@ pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
     let (result, half_borrow, _) = sub8(game_state.get_register8(r), 1, 0);
     game_state.set_register8(r, result);
 
-    if matches!(r, Register::B) { println!("B val: {}", result); }
-    if matches!(r, Register::C) { println!("C val: {}", result); }
+    // if matches!(r, Register::B) { println!("B val: {}", result); }
+    // if matches!(r, Register::C) { println!("C val: {}", result); }
 
     let new_flags = Flags {
         Z: result == 0,

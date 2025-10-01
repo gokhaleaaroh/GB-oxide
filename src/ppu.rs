@@ -110,7 +110,7 @@ impl PPU {
         for x_screen in 0..160u8 {
             let mut final_pix;
 
-            if lcdc & LCDC_WIN_ON != 0 && (ly >= wx && x_screen >= wy - 7) {
+            if lcdc & LCDC_WIN_ON != 0 && (ly >= wy && x_screen >= wx - 7) {
                 // Window enabled
                 let win_x = x_screen - wx + 7;
                 let win_y = ly - wy;

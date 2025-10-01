@@ -2,9 +2,9 @@ use std::error::Error;
 mod constants;
 mod cpu;
 mod instructions;
+mod logger;
 mod ppu;
 mod state;
-mod logger;
 use cpu::CPU;
 use minifb::{Key, Window, WindowOptions};
 use ppu::PPU;
@@ -12,7 +12,8 @@ use state::GameState;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // let cart = state::Cartridge::load_rom("roms/tetris.gb")?;
-    let mut game_state = GameState::start_game("/home/aarohg/Projects/my-emulator/roms/tetris.gb")?;
+    let mut game_state =
+        GameState::start_game("/home/aarohg/Projects/my-emulator/roms/tetris.gb")?;
     let cpu = CPU::initialize();
     let mut ppu = PPU::initialize();
 

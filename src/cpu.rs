@@ -604,11 +604,13 @@ impl CPU {
             } else if self.three_byte_ins.contains(&next_instruction) {
                 advance_amount = 3;
                 print!(
-                    ", Bytes: 0x{:02X}, 0x{:02X}, ",
-                    game_state.read(curr_pc + 1),
-                    game_state.read(curr_pc + 2)
+                     ", Bytes: 0x{:02X}, 0x{:02X}, ",
+                     game_state.read(curr_pc + 1),
+                     game_state.read(curr_pc + 2)
                 );
-            } else { print!("                     "); }
+            } else {
+		print!("                     ");
+	    }
             cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
 	    print!(" INS: {}", non_prefix_strings[next_instruction as usize]);
         } else {
