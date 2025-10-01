@@ -7,7 +7,5 @@ Screenshots:
 
 <figure>
   <img src="Screenshots/Intro-Credits.jpeg" alt="">
-</figure>
-<figure>
   <img src="Screenshots/Tetris.png" alt="">
 </figure>
