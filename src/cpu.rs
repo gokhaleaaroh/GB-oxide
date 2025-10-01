@@ -600,17 +600,17 @@ impl CPU {
         if next_instruction != 0xCB {
             if self.two_byte_ins.contains(&next_instruction) {
                 advance_amount = 2;
-                print!(", Byte: 0x{:02X},      ", game_state.read(curr_pc + 1));
+                print!(", Byte: 0x{:02X},        ", game_state.read(curr_pc + 1));
             } else if self.three_byte_ins.contains(&next_instruction) {
                 advance_amount = 3;
                 print!(
-                    ", Bytes: 0x{:02X}, 0x{:02X}",
+                    ", Bytes: 0x{:02X}, 0x{:02X}, ",
                     game_state.read(curr_pc + 1),
                     game_state.read(curr_pc + 2)
                 );
-            } else { print!("                   "); }
+            } else { print!("                     "); }
             cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
-	    print!(", INS: {}", non_prefix_strings[next_instruction as usize]);
+	    print!(" INS: {}", non_prefix_strings[next_instruction as usize]);
         } else {
 	    print!(", Code: 0x{:02X} ", game_state.read(curr_pc + 1));
             let actual_ins = game_state.read(curr_pc + 1);

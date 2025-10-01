@@ -254,23 +254,23 @@ impl GameState {
     pub fn set_register16(&mut self, reg: Register, val: u16) {
         match reg {
             Register::AF => {
-                self.gb.registers.a = ((val >> 8) & 0x0F) as u8;
-                self.gb.registers.f = (val & 0x0F) as u8;
+                self.gb.registers.a = (val >> 8) as u8;
+                self.gb.registers.f = (val & 0x00FF) as u8;
             }
 
             Register::BC => {
-                self.gb.registers.b = ((val >> 8) & 0x0F) as u8;
-                self.gb.registers.c = (val & 0x0F) as u8;
+                self.gb.registers.b = (val >> 8) as u8;
+                self.gb.registers.c = (val & 0x00FF) as u8;
             }
 
             Register::DE => {
-                self.gb.registers.d = ((val >> 8) & 0x0F) as u8;
-                self.gb.registers.e = (val & 0x0F) as u8;
+                self.gb.registers.d = (val >> 8) as u8;
+                self.gb.registers.e = (val & 0x00FF) as u8;
             }
 
             Register::HL => {
-                self.gb.registers.h = ((val >> 8) & 0x0F) as u8;
-                self.gb.registers.l = (val & 0x0F) as u8;
+                self.gb.registers.h = (val >> 8) as u8;
+                self.gb.registers.l = (val & 0x00FF) as u8;
             }
 
             Register::PC => self.gb.registers.pc = val,
@@ -375,14 +375,10 @@ impl GameState {
     }
 
     pub fn write(&mut self, value: u8, addr: u16) {
-        if (addr >= 0x9800 && addr <= 0x9BFF) || (addr >= 0x9C00 && addr <= 0x9FFF) {
-            println!("Writing TILE MAP");
-        }
-
         match addr {
             0x0000..=0x7FFF => (), // Read-Only!
 
-            0x8000..=0x9FFF => self.gb.memory.vram[addr as usize - 0x8000] = value,
+            0x8000..=0x9FFF => {println!("WRITING TO VRAM addr: 0x{:04X} value: 0x{:02X}", addr, value); self.gb.memory.vram[addr as usize - 0x8000] = value},
 
             0xA000..=0xBFFF => {
                 // TODO External RAM
@@ -413,7 +409,7 @@ impl GameState {
 
             0xFF4B => self.gb.io_registers.wx = value,
 
-            0xFF80..=0xFFFE => self.gb.memory.hram[addr as usize - 0xFF80] = value,
+            0xFF80..=0xFFFE => {println!("WRITING TO HRAM addr: 0x{:04X} value: 0x{:02X}", addr, value); self.gb.memory.hram[addr as usize - 0xFF80] = value},
 
             0xFFFF => self.gb.i_enable = value,
             _ => (),

@@ -19,11 +19,14 @@ pub fn ld_r16_n16(game_state: &mut GameState, r1: Register) -> u8 {
     let lsb = game_state.read(game_state.get_register16(Register::PC) + 1);
     let msb = game_state.read(game_state.get_register16(Register::PC) + 2);
     let val = ((msb as u16) << 8) | (lsb as u16);
+    if matches!(r1, Register::HL) { println!("Wrote 0x{:04X} to register HL", val); }
     game_state.set_register16(r1, val);
+    if matches!(r1, Register::HL) { println!("New value of HL: 0x{:04X}", game_state.get_register16(r1)); }
     2
 }
 
 pub fn ld_hladdr_r8(game_state: &mut GameState, r: Register) -> u8 {
+    println!("Writing to addr: 0x{:04X}", game_state.get_register16(Register::HL));
     game_state.write(
         game_state.get_register8(r),
         game_state.get_register16(Register::HL),
@@ -355,6 +358,9 @@ pub fn cp_a_n8(game_state: &mut GameState) -> u8 {
 pub fn dec_r8(game_state: &mut GameState, r: Register) -> u8 {
     let (result, half_borrow, _) = sub8(game_state.get_register8(r), 1, 0);
     game_state.set_register8(r, result);
+
+    if matches!(r, Register::B) { println!("B val: {}", result); }
+    if matches!(r, Register::C) { println!("C val: {}", result); }
 
     let new_flags = Flags {
         Z: result == 0,
@@ -1125,19 +1131,20 @@ pub fn halt(game_state: &mut GameState) -> u8 {
 
 pub fn interrupt_handler(game_state: &mut GameState) -> bool {
     let i_flag = game_state.read(0xFF0F);
+    let i_enable = game_state.get_i_enable();
     if (i_flag << 3) != 0 {
         game_state.set_interrupts(false);
         let jump_addr;
-        if i_flag & INT_VBLANK != 0 {
+        if i_flag & INT_VBLANK != 0 && i_enable & INT_VBLANK != 0 {
             game_state.write(i_flag & !INT_VBLANK, 0xFF0F);
             jump_addr = 0x0040;
-        } else if i_flag & INT_LCD != 0 {
+        } else if i_flag & INT_LCD != 0 && i_enable & INT_LCD != 0 {
             game_state.write(i_flag & !INT_LCD, 0xFF0F);
             jump_addr = 0x0048;
-        } else if i_flag & INT_TIMER != 0 {
+        } else if i_flag & INT_TIMER != 0 && i_enable & INT_TIMER != 0 {
             game_state.write(i_flag & !INT_TIMER, 0xFF0F);
             jump_addr = 0x0050;
-        } else if i_flag & INT_SERIAL != 0 {
+        } else if i_flag & INT_SERIAL != 0 && i_enable & INT_SERIAL != 0 {
             game_state.write(i_flag & !INT_SERIAL, 0xFF0F);
             jump_addr = 0x0058;
         } else {
