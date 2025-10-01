@@ -141,17 +141,17 @@ impl PPU {
                 let sprite_top = self.active_sprites[i].unwrap().y_pos - 16;
                 let sprite_left = self.active_sprites[i].unwrap().x_pos - 8;
                 let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
-                    8
+                    7
                 } else {
-                    16
+                    15
                 };
 
-                if sprite_top <= ly && ly <= sprite_top + sprite_height {
+                if (sprite_top <= ly && ly <= sprite_top + sprite_height) && (sprite_left <= x_screen && x_screen <= sprite_left + 7) {
                     // sprite in line
                     let attrs = self.active_sprites[i].unwrap().attrs;
                     let y_flip = attrs & SPRITE_Y_FLIP != 0;
                     let v_offset = if y_flip {
-                        sprite_height - (ly - sprite_top) - 1
+                        sprite_height - (ly - sprite_top)
                     } else {
                         ly - sprite_top
                     };
@@ -162,7 +162,7 @@ impl PPU {
                         x_screen - sprite_left
                     };
                     let tile_index;
-                    if sprite_height == 8 {
+                    if sprite_height == 7 {
                         tile_index = self.active_sprites[i].unwrap().tile_index;
                     } else {
                         tile_index = (self.active_sprites[i].unwrap().tile_index & 0b1111_1110)
