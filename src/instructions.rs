@@ -1145,6 +1145,7 @@ pub fn interrupt_handler(game_state: &mut GameState) -> bool {
         } else if i_flag & INT_TIMER != 0 && i_enable & INT_TIMER != 0 {
             game_state.write(i_flag & !INT_TIMER, 0xFF0F);
             jump_addr = 0x0050;
+	    println!("EXECUTING TIMER INTERRUPT");
         } else if i_flag & INT_SERIAL != 0 && i_enable & INT_SERIAL != 0 {
             game_state.write(i_flag & !INT_SERIAL, 0xFF0F);
             jump_addr = 0x0058;

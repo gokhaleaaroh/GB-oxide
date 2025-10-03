@@ -12,8 +12,7 @@ use state::GameState;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // let cart = state::Cartridge::load_rom("roms/tetris.gb")?;
-    let mut game_state =
-        GameState::start_game("/home/aarohg/Projects/my-emulator/roms/tetris.gb")?;
+    let mut game_state = GameState::start_game("/home/aarohg/Projects/my-emulator/roms/tetris.gb")?;
     let cpu = CPU::initialize();
     let mut ppu = PPU::initialize();
 
@@ -31,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let cycles = cpu.step(&mut game_state);
-        let update = ppu.step(4 * cycles, &mut game_state);
+        let update = ppu.step(cycles, &mut game_state);
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         if update {
             window

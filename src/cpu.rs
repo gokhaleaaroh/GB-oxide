@@ -1,6 +1,6 @@
 use crate::instructions::*;
 use crate::logger::*;
-use crate::state::{GameState, Register, CC};
+use crate::state::{CC, GameState, Register};
 use std::collections::HashSet;
 
 type InstructionWrapper = fn(&mut GameState) -> u8;
@@ -87,7 +87,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::D),                // 0x15
                 |s: &mut GameState| ld_r8_n8(s, Register::D),              // 0x16
                 |s: &mut GameState| rla(s),                                // 0x17
-                |s: &mut GameState| jr_e8(s),                             // 0x18
+                |s: &mut GameState| jr_e8(s),                              // 0x18
                 |s: &mut GameState| add_hl_r16(s, Register::DE),           // 0x19
                 |s: &mut GameState| ld_a_r16addr(s, Register::DE),         // 0x1A
                 |s: &mut GameState| dec_r16(s, Register::DE),              // 0x1B
@@ -95,7 +95,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::E),                // 0x1D
                 |s: &mut GameState| ld_r8_n8(s, Register::E),              // 0x1E
                 |s: &mut GameState| rra(s),                                // 0x1F
-                |s: &mut GameState| jr_cc(s, CC::NZ),           // 0x20
+                |s: &mut GameState| jr_cc(s, CC::NZ),                      // 0x20
                 |s: &mut GameState| ld_r16_n16(s, Register::HL),           // 0x21
                 |s: &mut GameState| ld_hliaddr_a(s),                       // 0x22
                 |s: &mut GameState| inc_r16(s, Register::HL),              // 0x23
@@ -103,7 +103,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::H),                // 0x25
                 |s: &mut GameState| ld_r8_n8(s, Register::H),              // 0x26
                 |s: &mut GameState| daa(s),                                // 0x27
-                |s: &mut GameState| jr_cc(s, CC::Z),          // 0x28
+                |s: &mut GameState| jr_cc(s, CC::Z),                       // 0x28
                 |s: &mut GameState| add_hl_r16(s, Register::HL),           // 0x29
                 |s: &mut GameState| ld_a_hli(s),                           // 0x2A
                 |s: &mut GameState| dec_r16(s, Register::HL),              // 0x2B
@@ -111,7 +111,7 @@ impl CPU {
                 |s: &mut GameState| dec_r8(s, Register::L),                // 0x2D
                 |s: &mut GameState| ld_r8_n8(s, Register::L),              // 0x2E
                 |s: &mut GameState| cpl(s),                                // 0x2F
-                |s: &mut GameState| jr_cc(s, CC::NC),           // 0x30
+                |s: &mut GameState| jr_cc(s, CC::NC),                      // 0x30
                 |s: &mut GameState| ld_sp_n16addr(s),                      // 0x31
                 |s: &mut GameState| ld_hldaddr_a(s),                       // 0x32
                 |s: &mut GameState| inc_sp(s),                             // 0x33
@@ -119,7 +119,7 @@ impl CPU {
                 |s: &mut GameState| dec_hladdr(s),                         // 0x35
                 |s: &mut GameState| ld_hladdr_n8(s),                       // 0x36
                 |s: &mut GameState| scf(s),                                // 0x37
-                |s: &mut GameState| jr_cc(s, CC::C),          // 0x38
+                |s: &mut GameState| jr_cc(s, CC::C),                       // 0x38
                 |s: &mut GameState| add_hl_sp(s),                          // 0x39
                 |s: &mut GameState| ld_a_hld(s),                           // 0x3A
                 |s: &mut GameState| dec_sp(s),                             // 0x3B
@@ -255,35 +255,35 @@ impl CPU {
                 |s: &mut GameState| cp_a_r8(s, Register::L),               // 0xBD
                 |s: &mut GameState| cp_a_hladdr(s),                        // 0xBE
                 |s: &mut GameState| cp_a_r8(s, Register::A),               // 0xBF
-                |s: &mut GameState| ret_cc(s, CC::NZ),          // 0xC0
+                |s: &mut GameState| ret_cc(s, CC::NZ),                     // 0xC0
                 |s: &mut GameState| pop_r16(s, Register::BC),              // 0xC1
-                |s: &mut GameState| jp_cc(s, CC::NZ),           // 0xC2
+                |s: &mut GameState| jp_cc(s, CC::NZ),                      // 0xC2
                 |s: &mut GameState| jp_n16(s),                             // 0xC3
-                |s: &mut GameState| call_cc(s, CC::NZ),         // 0xC4
+                |s: &mut GameState| call_cc(s, CC::NZ),                    // 0xC4
                 |s: &mut GameState| push_r16(s, Register::BC),             // 0xC5
                 |s: &mut GameState| add_a_n8(s),                           // 0xC6
                 |s: &mut GameState| rst_vec(s, 0x00),                      // 0xC7
-                |s: &mut GameState| ret_cc(s, CC::Z),         // 0xC8
+                |s: &mut GameState| ret_cc(s, CC::Z),                      // 0xC8
                 |s: &mut GameState| ret(s),                                // 0xC9
-                |s: &mut GameState| jp_cc(s, CC::Z),          // 0xCA
+                |s: &mut GameState| jp_cc(s, CC::Z),                       // 0xCA
                 |_: &mut GameState| 1,                                     // 0xCB PREFIX!
-                |s: &mut GameState| call_cc(s, CC::Z),        // 0xCC
+                |s: &mut GameState| call_cc(s, CC::Z),                     // 0xCC
                 |s: &mut GameState| call_n16(s),                           // 0xCD
                 |s: &mut GameState| adc_a_n8(s),                           // 0xCE
                 |s: &mut GameState| rst_vec(s, 0x08),                      // 0xCF
-                |s: &mut GameState| ret_cc(s, CC::NC),          // 0xD0
+                |s: &mut GameState| ret_cc(s, CC::NC),                     // 0xD0
                 |s: &mut GameState| pop_r16(s, Register::DE),              // 0xD1
-                |s: &mut GameState| jp_cc(s, CC::NC),           // 0xD2
+                |s: &mut GameState| jp_cc(s, CC::NC),                      // 0xD2
                 |_: &mut GameState| 1,                                     // 0xD3 Blank
-                |s: &mut GameState| call_cc(s, CC::NC),         // 0xD4
+                |s: &mut GameState| call_cc(s, CC::NC),                    // 0xD4
                 |s: &mut GameState| push_r16(s, Register::DE),             // 0xD5
                 |s: &mut GameState| sub_a_n8(s),                           // 0xD6
                 |s: &mut GameState| rst_vec(s, 0x10),                      // 0xD7
-                |s: &mut GameState| ret_cc(s, CC::C),         // 0xD8
+                |s: &mut GameState| ret_cc(s, CC::C),                      // 0xD8
                 |s: &mut GameState| reti(s),                               // 0xD9
-                |s: &mut GameState| jp_cc(s, CC::C),          // 0xDA
+                |s: &mut GameState| jp_cc(s, CC::C),                       // 0xDA
                 |_: &mut GameState| 1,                                     // 0xDB Blank
-                |s: &mut GameState| call_cc(s, CC::C),        // 0xDC
+                |s: &mut GameState| call_cc(s, CC::C),                     // 0xDC
                 |_: &mut GameState| 1,                                     // 0xDD Blank
                 |s: &mut GameState| sbc_a_n8(s),                           // 0xDE
                 |s: &mut GameState| rst_vec(s, 0x18),                      // 0xDF
@@ -587,53 +587,86 @@ impl CPU {
     }
 
     pub fn step(&self, game_state: &mut GameState) -> u8 {
-	let mut interrupted = false;
-	if game_state.get_interrupts() && (game_state.get_i_flag() & game_state.get_i_enable() != 0) {
-	    interrupted = interrupt_handler(game_state);
-	}
+        let mut interrupted = false;
+        if game_state.get_interrupts() && (game_state.get_i_flag() & game_state.get_i_enable() != 0)
+        {
+            interrupted = interrupt_handler(game_state);
+        }
+
         let curr_pc = game_state.get_register16(Register::PC);
         let next_instruction = game_state.read(curr_pc);
-        print!("PC: 0x{:04X}, OP: 0x{:02X}, SP: 0x{:04X}", curr_pc, next_instruction, game_state.get_register16(Register::SP));
+        // print!(
+        //     "PC: 0x{:04X}, OP: 0x{:02X}, SP: 0x{:04X}",
+        //     curr_pc,
+        //     next_instruction,
+        //     game_state.get_register16(Register::SP)
+        // );
         let cycles;
 
         let mut advance_amount = 1;
         if next_instruction != 0xCB {
             if self.two_byte_ins.contains(&next_instruction) {
                 advance_amount = 2;
-                print!(", Byte: 0x{:02X},        ", game_state.read(curr_pc + 1));
+                // print!(", Byte: 0x{:02X},        ", game_state.read(curr_pc + 1));
             } else if self.three_byte_ins.contains(&next_instruction) {
                 advance_amount = 3;
-                print!(
-                     ", Bytes: 0x{:02X}, 0x{:02X}, ",
-                     game_state.read(curr_pc + 1),
-                     game_state.read(curr_pc + 2)
-                );
+                // print!(
+                //     ", Bytes: 0x{:02X}, 0x{:02X}, ",
+                //     game_state.read(curr_pc + 1),
+                //     game_state.read(curr_pc + 2)
+                // );
             } else {
-		print!("                     ");
-	    }
+                // print!("                     ");
+            }
             cycles = (self.non_prefix_opcodes[next_instruction as usize])(game_state);
-	    print!(" INS: {}", non_prefix_strings[next_instruction as usize]);
+            // print!(" INS: {}", non_prefix_strings[next_instruction as usize]);
         } else {
-	    print!(", Code: 0x{:02X} ", game_state.read(curr_pc + 1));
+            // print!(", Code: 0x{:02X} ", game_state.read(curr_pc + 1));
             let actual_ins = game_state.read(curr_pc + 1);
             cycles = (self.cb_prefix_opcodes[actual_ins as usize])(game_state);
             advance_amount = 2;
-	    print!(", INS: {}", cb_prefix_strings[next_instruction as usize]);
+            // print!(", INS: {}", cb_prefix_strings[next_instruction as usize]);
         }
-        println!();
+        // println!();
 
         if game_state.pc_moved() {
             advance_amount = 0;
             game_state.set_pc_moved(false);
         }
 
-        game_state.update_clock(cycles);
+        let cycles = cycles + if interrupted { 5 } else { 0 };
+
+	let t_cycles = 4 * cycles;
+
+        game_state.update_clock(t_cycles);
 
         // it is possible for curr_pc and Register::PC to disagree at this point
         game_state.set_register16(
             Register::PC,
             game_state.get_register16(Register::PC) + advance_amount,
         );
-        cycles + if interrupted { 5 } else { 0 }
+
+	game_state.inc_div(t_cycles);
+	
+	if game_state.get_tac() & 0b100 != 0 {
+	    let tima_update_freq =
+		match game_state.get_tac() & 0b11 {
+		    0b00 => 1024,
+		    0b01 => 16,
+		    0b10 => 64,
+		    0b11 => 256,
+		    _ => unreachable!()
+		};
+
+	    game_state.inc_available_cycles(t_cycles as u16);
+	    let mut available_cycles = game_state.get_available_cycles();
+	    while available_cycles >= tima_update_freq {
+		game_state.dec_available_cycles(tima_update_freq);
+		available_cycles -= tima_update_freq;
+		game_state.update_tima();
+	    }
+	}
+
+        t_cycles
     }
 }

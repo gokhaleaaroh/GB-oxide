@@ -62,7 +62,7 @@ impl PPU {
         Self {
             dot_counter: 0,
             active_sprites: [NONE; 10],
-            current_fb: vec![0; 144*160],
+            current_fb: vec![0; 144 * 160],
         }
     }
 
@@ -81,7 +81,9 @@ impl PPU {
 
             let sprite_loc = (i * 4) as u8;
             let obj_entry = game_state.get_oam_entry(sprite_loc);
-	    if obj_entry[0] < 16 { continue; }
+            if obj_entry[0] < 16 {
+                continue;
+            }
             let y_min = obj_entry[0] - 16;
             let y_max = y_min + sprite_height;
             let ly = game_state.get_ly();
@@ -146,7 +148,9 @@ impl PPU {
                     15
                 };
 
-                if (sprite_top <= ly && ly <= sprite_top + sprite_height) && (sprite_left <= x_screen && x_screen <= sprite_left + 7) {
+                if (sprite_top <= ly && ly <= sprite_top + sprite_height)
+                    && (sprite_left <= x_screen && x_screen <= sprite_left + 7)
+                {
                     // sprite in line
                     let attrs = self.active_sprites[i].unwrap().attrs;
                     let y_flip = attrs & SPRITE_Y_FLIP != 0;
@@ -196,7 +200,6 @@ impl PPU {
         while self.dot_counter >= DOTS_PER_SL as u128 {
             self.dot_counter -= DOTS_PER_SL as u128;
             let ly = game_state.get_ly();
-	    if game_state.get_interrupts() { println!("Interrupts ON, LY: {ly}"); }
             if ly < VISIBLE_SL {
                 self.oam_scan(game_state);
                 let next_scanline = self.gen_scanline(game_state);
@@ -205,18 +208,18 @@ impl PPU {
                     self.current_fb[(ly as u16 * 160u16 + i) as usize] =
                         gb_color_to_u32(next_scanline[i as usize]);
                 }
-
-                
-            } else if ly > MAX_SL {
-                game_state.set_ly(0);
+            } 
+            game_state.inc_ly(1);
+            if ly + 1 == VISIBLE_SL {
+                // VBLANK
+                game_state.write(game_state.read(0xFF0F) | INT_VBLANK, 0xFF0F);
+                // println!("VBLANK");
+                return true;
             }
 
-            game_state.inc_ly(1);
-	    if ly == 143 { // VBLANK
-		game_state.write(game_state.read(0xFF0F) | INT_VBLANK, 0xFF0F);
-		println!("VBLANK");
-		return true;
-	    }
+	    if ly + 1 > MAX_SL {
+                game_state.set_ly(0);
+            }
         }
         false
     }

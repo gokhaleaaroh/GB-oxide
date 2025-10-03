@@ -107,6 +107,24 @@ impl IORegisters {
     }
 }
 
+struct TimerRegisters {
+    div: u16,
+    tima: u8,
+    tma: u8,
+    tac: u8,
+}
+
+impl TimerRegisters {
+    fn reset_registers() -> Self {
+	Self {
+	    div: 0x0000,
+	    tima: 0x00,
+	    tma: 0x00,
+	    tac: 0xF8,
+	}
+    }
+}
+
 struct Memory {
     wram: [u8; 0x2000],
     vram: [u8; 0x2000],
@@ -132,6 +150,8 @@ struct Gameboy {
     dma: u8,
     registers: Registers,
     io_registers: IORegisters,
+    timer_registers: TimerRegisters,
+    available_cycles: u16,
     memory: Memory,
     pc_moved: bool,
     cycles: u128,
@@ -146,6 +166,8 @@ impl Gameboy {
             dma: 0,
             registers: Registers::reset_registers(),
             io_registers: IORegisters::reset_registers(),
+	    timer_registers: TimerRegisters::reset_registers(),
+	    available_cycles: 0,
             memory: Memory::reset_memory(),
             pc_moved: false,
             cycles: 0,
@@ -345,6 +367,14 @@ impl GameState {
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00],
 
+	    0xFF04 => (self.gb.timer_registers.div >> 8) as u8,
+
+	    0xFF05 => self.gb.timer_registers.tima,
+
+	    0xFF06 => self.gb.timer_registers.tma,
+
+	    0xFF07 => self.gb.timer_registers.tac,
+
             0xFF0F => self.gb.i_flag,
 
             // TODO IO Registers and other memory mapped stuff
@@ -378,7 +408,10 @@ impl GameState {
         match addr {
             0x0000..=0x7FFF => (), // Read-Only!
 
-            0x8000..=0x9FFF => {println!("WRITING TO VRAM addr: 0x{:04X} value: 0x{:02X}", addr, value); self.gb.memory.vram[addr as usize - 0x8000] = value},
+            0x8000..=0x9FFF => {
+		println!("WRITING TO VRAM addr: 0x{:04X} value: 0x{:02X}", addr, value);
+		self.gb.memory.vram[addr as usize - 0x8000] = value
+	    },
 
             0xA000..=0xBFFF => {
                 // TODO External RAM
@@ -390,6 +423,19 @@ impl GameState {
             0xE000..=0xFDFF => self.gb.memory.wram[addr as usize - 0xE000] = value,
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
+	    
+
+	    0xFF04 => self.gb.timer_registers.div = 0,
+
+	    0xFF05 => self.gb.timer_registers.tima = value,
+
+	    0xFF06 => self.gb.timer_registers.tma = value,
+
+	    0xFF07 => {
+		println!("Writing: 0b{:08b} to TAC", value);
+		self.gb.timer_registers.tac = value;
+	    }
+
             0xFF0F => self.gb.i_flag = value,
 
             // TODO IO Registers and other memory mapped stuff
@@ -409,7 +455,10 @@ impl GameState {
 
             0xFF4B => self.gb.io_registers.wx = value,
 
-            0xFF80..=0xFFFE => {println!("WRITING TO HRAM addr: 0x{:04X} value: 0x{:02X}", addr, value); self.gb.memory.hram[addr as usize - 0xFF80] = value},
+            0xFF80..=0xFFFE => {
+		// println!("WRITING TO HRAM addr: 0x{:04X} value: 0x{:02X}", addr, value);
+		self.gb.memory.hram[addr as usize - 0xFF80] = value
+	    },
 
             0xFFFF => self.gb.i_enable = value,
             _ => (),
@@ -442,6 +491,38 @@ impl GameState {
 
     pub fn update_clock(&mut self, add_cycles: u8) {
         self.gb.cycles += add_cycles as u128;
+    }
+
+    pub fn inc_div(&mut self, amount: u8) {
+	self.gb.timer_registers.div = self.gb.timer_registers.div.wrapping_add(amount as u16);
+    }
+
+    pub fn get_tac(&self) -> u8 {
+	self.gb.timer_registers.tac
+    }
+
+    pub fn inc_available_cycles(&mut self, val: u16) {
+	assert!(self.gb.available_cycles <= 0xFFFF - val);
+	self.gb.available_cycles += val;
+    }
+
+    pub fn dec_available_cycles(&mut self, val: u16) {
+	assert!(self.gb.available_cycles >= val);
+	self.gb.available_cycles -= val;
+    }
+
+    pub fn get_available_cycles(&self) -> u16 {
+	self.gb.available_cycles
+    }
+
+    pub fn update_tima(&mut self) {
+	if self.gb.timer_registers.tima > 0xFF - 1 {
+	    self.gb.timer_registers.tima = self.gb.timer_registers.tma;
+	    // Timer Interrupt
+	    self.write(self.read(0xFF0F) | INT_TIMER, 0xFF0F);
+	} else {
+	    self.gb.timer_registers.tima += 1;
+	}
     }
 
     pub fn get_oam_entry(&self, loc: u8) -> [u8; 4] {
