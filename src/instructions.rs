@@ -175,6 +175,7 @@ fn general_add_a_n8(game_state: &mut GameState, val: u8, carry_on: bool) {
     } else {
         0
     };
+
     let (result, half_carry, carry_out) = add8(game_state.get_register8(Register::A), val, c);
 
     game_state.set_register8(Register::A, result);
@@ -1094,12 +1095,12 @@ pub fn daa(game_state: &mut GameState) -> u8 {
     let mut adjustment: i16 = 0;
     let a_val = game_state.get_register8(Register::A);
     let mut new_flags = Flags {
-        Z: flags.Z,
+        Z: false,
         N: flags.N,
         H: false,
         C: flags.C,
     };
-
+    let result;
     if flags.N {
         if flags.H {
             adjustment += 0x06
@@ -1107,17 +1108,21 @@ pub fn daa(game_state: &mut GameState) -> u8 {
         if flags.C {
             adjustment += 0x60
         };
+
+        result = ((a_val as i16) - (adjustment)) as u16 as u8;
     } else {
-        if flags.H || (a_val & 0x0F) > 0x09 {
+        if flags.H || ((a_val & 0x0F) > 0x09) {
             adjustment += 0x06;
         }
         if flags.C || a_val > 0x99 {
             adjustment += 0x60;
-            new_flags.C = true
+            new_flags.C = true;
+        } else {
+            new_flags.C = false;
         }
+        result = ((a_val as u16) + (adjustment as u16)) as u8;
     }
 
-    let result = ((a_val as i16) - (adjustment)) as u16 as u8;
     game_state.set_register8(Register::A, result);
 
     if result == 0 {

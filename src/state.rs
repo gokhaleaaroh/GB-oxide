@@ -218,7 +218,14 @@ impl Cartridge {
         let rom = fs::read(path)?;
 
         // TODO Read ROM header to figure out MBC type and RAM size
-        let mbc = MbcType::RomOnly;
+
+        let mbc;
+        if rom[0x0147] == 0x01 {
+            mbc = MbcType::Mbc1;
+        } else {
+            mbc = MbcType::RomOnly;
+        }
+
         let ram_size = 0x2000;
 
         Ok(Self {
@@ -497,8 +504,9 @@ impl GameState {
                 ()
             }
 
-            0xC000..=0xDFFF => self.gb.memory.wram[addr as usize - 0xC000] = value,
-
+            0xC000..=0xDFFF => {
+                self.gb.memory.wram[addr as usize - 0xC000] = value;
+            }
             0xE000..=0xFDFF => self.gb.memory.wram[addr as usize - 0xE000] = value,
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
