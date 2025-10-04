@@ -23,5 +23,4 @@ The directions are mapped to the arrow keys.
 - Pass [Blargg's suite of tests](https://github.com/retrio/gb-test-roms)
 
 Tetris Gameplay: 
-![video](https://github.com/user-attachments/assets/a69680bf-64c8-4d0b-b033-f68131c1d193)
-
+<video src="https://github.com/user-attachments/assets/a69680bf-64c8-4d0b-b033-f68131c1d193"></video>
