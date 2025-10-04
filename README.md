@@ -13,4 +13,4 @@ GB-Oxide is a Game Boy/DMG emulator created using Rust. Currently supports CPU e
 Screenshots:
 
 ![screenshot](Screenshots/Intro-Credits.jpeg) ![screenshot](Screenshots/Tetris-cropped.png) ![screenshot](Screenshots/select-menu.png)
-![screenshot](Screenshots/gameplay.jpeg) ![screenshot](Screenshots/line-clear.png) ![screenshot](Screenshots/game-over.png)
+![screenshot](Screenshots/gameplay.png) ![screenshot](Screenshots/line-clear.png) ![screenshot](Screenshots/game-over.png)
