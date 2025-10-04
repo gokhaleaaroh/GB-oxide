@@ -29,6 +29,40 @@ fn main() -> Result<(), Box<dyn Error>> {
     // }
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let (mut a, mut b, mut start, mut select, mut down, mut up, mut left, mut right) =
+            (false, false, false, false, false, false, false, false);
+
+        // Arrow Keys
+        if window.is_key_down(Key::Down) {
+            down = true;
+        }
+        if window.is_key_down(Key::Up) {
+            up = true;
+        }
+        if window.is_key_down(Key::Left) {
+            left = true;
+        }
+        if window.is_key_down(Key::Right) {
+            right = true;
+        }
+
+        // Start, Select, B, A
+        if window.is_key_down(Key::S) {
+            select = true;
+        }
+        if window.is_key_down(Key::A) {
+            start = true;
+        }
+        if window.is_key_down(Key::X) {
+            b = true;
+        }
+
+        if window.is_key_down(Key::Z) {
+            a = true;
+        }
+
+        game_state.update_joypad(a, b, start, select, up, down, left, right);
+
         let cycles = cpu.step(&mut game_state);
         let update = ppu.step(cycles, &mut game_state);
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way

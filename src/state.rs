@@ -30,6 +30,17 @@ pub enum CC {
     NC,
 }
 
+struct Joypad {
+    a_button: bool,
+    b_button: bool,
+    start_button: bool,
+    select_button: bool,
+    up_button: bool,
+    down_button: bool,
+    left_button: bool,
+    right_button: bool,
+}
+
 pub struct Flags {
     pub Z: bool,
     pub N: bool,
@@ -91,7 +102,7 @@ struct IORegisters {
 impl IORegisters {
     fn reset_registers() -> Self {
         Self {
-            joyp: 0,
+            joyp: 0xCF,
             lcdc: 0x91,
             ly: 0,
             lyc: 0,
@@ -116,12 +127,12 @@ struct TimerRegisters {
 
 impl TimerRegisters {
     fn reset_registers() -> Self {
-	Self {
-	    div: 0x0000,
-	    tima: 0x00,
-	    tma: 0x00,
-	    tac: 0xF8,
-	}
+        Self {
+            div: 0x0000,
+            tima: 0x00,
+            tma: 0x00,
+            tac: 0xF8,
+        }
     }
 }
 
@@ -148,6 +159,7 @@ struct Gameboy {
     i_enable: u8,
     i_flag: u8,
     dma: u8,
+    joypad: Joypad,
     registers: Registers,
     io_registers: IORegisters,
     timer_registers: TimerRegisters,
@@ -164,10 +176,20 @@ impl Gameboy {
             i_enable: 0,
             i_flag: 0,
             dma: 0,
+            joypad: Joypad {
+                a_button: false,
+                b_button: false,
+                start_button: false,
+                select_button: false,
+                up_button: false,
+                down_button: false,
+                left_button: false,
+                right_button: false,
+            },
             registers: Registers::reset_registers(),
             io_registers: IORegisters::reset_registers(),
-	    timer_registers: TimerRegisters::reset_registers(),
-	    available_cycles: 0,
+            timer_registers: TimerRegisters::reset_registers(),
+            available_cycles: 0,
             memory: Memory::reset_memory(),
             pc_moved: false,
             cycles: 0,
@@ -367,13 +389,67 @@ impl GameState {
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00],
 
-	    0xFF04 => (self.gb.timer_registers.div >> 8) as u8,
+            0xFF00 => {
+                // print!("Read joypad, Returning val: ");
+                let mut button_bits = 0b0000_1111;
+                if self.gb.joypad.a_button {
+                    // println!("A WAS PRESSED");
+                    button_bits &= 0b1111_1110;
+                }
 
-	    0xFF05 => self.gb.timer_registers.tima,
+                if self.gb.joypad.b_button {
+                    // println!("B WAS PRESSED");
+                    button_bits &= 0b1111_1101;
+                }
 
-	    0xFF06 => self.gb.timer_registers.tma,
+                if self.gb.joypad.select_button {
+                    // println!("SELECT WAS PRESSED");
+                    button_bits &= 0b1111_1011;
+                }
 
-	    0xFF07 => self.gb.timer_registers.tac,
+                if self.gb.joypad.start_button {
+                    //  println!("START WAS PRESSED");
+                    button_bits &= 0b1111_0111;
+                }
+
+                let mut d_pad_bits = 0x0F;
+                if self.gb.joypad.right_button {
+                    d_pad_bits &= 0b1111_1110;
+                }
+
+                if self.gb.joypad.left_button {
+                    d_pad_bits &= 0b1111_1101;
+                }
+
+                if self.gb.joypad.up_button {
+                    d_pad_bits &= 0b1111_1011;
+                }
+
+                if self.gb.joypad.down_button {
+                    d_pad_bits &= 0b1111_0111;
+                }
+
+                let select_buttons = self.gb.io_registers.joyp & 0b0010_0000;
+                let select_d_pad = self.gb.io_registers.joyp & 0b0001_0000;
+
+                if select_buttons == 0 && select_d_pad == 0 {
+                    (self.gb.io_registers.joyp | 0x0F) & (button_bits & d_pad_bits)
+                } else if select_buttons == 0 {
+                    (self.gb.io_registers.joyp | 0x0F) & button_bits
+                } else if select_d_pad == 0 {
+                    (self.gb.io_registers.joyp | 0x0F) & d_pad_bits
+                } else {
+                    self.gb.io_registers.joyp | 0x0F
+                }
+            }
+
+            0xFF04 => (self.gb.timer_registers.div >> 8) as u8,
+
+            0xFF05 => self.gb.timer_registers.tima,
+
+            0xFF06 => self.gb.timer_registers.tma,
+
+            0xFF07 => self.gb.timer_registers.tac,
 
             0xFF0F => self.gb.i_flag,
 
@@ -409,9 +485,12 @@ impl GameState {
             0x0000..=0x7FFF => (), // Read-Only!
 
             0x8000..=0x9FFF => {
-		println!("WRITING TO VRAM addr: 0x{:04X} value: 0x{:02X}", addr, value);
-		self.gb.memory.vram[addr as usize - 0x8000] = value
-	    },
+                // println!(
+                //     "WRITING TO VRAM addr: 0x{:04X} value: 0x{:02X}",
+                //     addr, value
+                // );
+                self.gb.memory.vram[addr as usize - 0x8000] = value
+            }
 
             0xA000..=0xBFFF => {
                 // TODO External RAM
@@ -423,18 +502,22 @@ impl GameState {
             0xE000..=0xFDFF => self.gb.memory.wram[addr as usize - 0xE000] = value,
 
             0xFE00..=0xFE9F => self.gb.memory.oam[addr as usize - 0xFE00] = value,
-	    
 
-	    0xFF04 => self.gb.timer_registers.div = 0,
+            0xFF00 => {
+                self.gb.io_registers.joyp =
+                    (self.gb.io_registers.joyp & 0b1100_1111) | (value & 0b0011_0000);
+            }
 
-	    0xFF05 => self.gb.timer_registers.tima = value,
+            0xFF04 => self.gb.timer_registers.div = 0,
 
-	    0xFF06 => self.gb.timer_registers.tma = value,
+            0xFF05 => self.gb.timer_registers.tima = value,
 
-	    0xFF07 => {
-		println!("Writing: 0b{:08b} to TAC", value);
-		self.gb.timer_registers.tac = value;
-	    }
+            0xFF06 => self.gb.timer_registers.tma = value,
+
+            0xFF07 => {
+                println!("Writing: 0b{:08b} to TAC", value);
+                self.gb.timer_registers.tac = value;
+            }
 
             0xFF0F => self.gb.i_flag = value,
 
@@ -456,9 +539,9 @@ impl GameState {
             0xFF4B => self.gb.io_registers.wx = value,
 
             0xFF80..=0xFFFE => {
-		// println!("WRITING TO HRAM addr: 0x{:04X} value: 0x{:02X}", addr, value);
-		self.gb.memory.hram[addr as usize - 0xFF80] = value
-	    },
+                // println!("WRITING TO HRAM addr: 0x{:04X} value: 0x{:02X}", addr, value);
+                self.gb.memory.hram[addr as usize - 0xFF80] = value
+            }
 
             0xFFFF => self.gb.i_enable = value,
             _ => (),
@@ -494,35 +577,35 @@ impl GameState {
     }
 
     pub fn inc_div(&mut self, amount: u8) {
-	self.gb.timer_registers.div = self.gb.timer_registers.div.wrapping_add(amount as u16);
+        self.gb.timer_registers.div = self.gb.timer_registers.div.wrapping_add(amount as u16);
     }
 
     pub fn get_tac(&self) -> u8 {
-	self.gb.timer_registers.tac
+        self.gb.timer_registers.tac
     }
 
     pub fn inc_available_cycles(&mut self, val: u16) {
-	assert!(self.gb.available_cycles <= 0xFFFF - val);
-	self.gb.available_cycles += val;
+        assert!(self.gb.available_cycles <= 0xFFFF - val);
+        self.gb.available_cycles += val;
     }
 
     pub fn dec_available_cycles(&mut self, val: u16) {
-	assert!(self.gb.available_cycles >= val);
-	self.gb.available_cycles -= val;
+        assert!(self.gb.available_cycles >= val);
+        self.gb.available_cycles -= val;
     }
 
     pub fn get_available_cycles(&self) -> u16 {
-	self.gb.available_cycles
+        self.gb.available_cycles
     }
 
     pub fn update_tima(&mut self) {
-	if self.gb.timer_registers.tima > 0xFF - 1 {
-	    self.gb.timer_registers.tima = self.gb.timer_registers.tma;
-	    // Timer Interrupt
-	    self.write(self.read(0xFF0F) | INT_TIMER, 0xFF0F);
-	} else {
-	    self.gb.timer_registers.tima += 1;
-	}
+        if self.gb.timer_registers.tima > 0xFF - 1 {
+            self.gb.timer_registers.tima = self.gb.timer_registers.tma;
+            // Timer Interrupt
+            self.write(self.read(0xFF0F) | INT_TIMER, 0xFF0F);
+        } else {
+            self.gb.timer_registers.tima += 1;
+        }
     }
 
     pub fn get_oam_entry(&self, loc: u8) -> [u8; 4] {
@@ -583,5 +666,26 @@ impl GameState {
             result[i as usize] = ((byte2 as u16) << 8) | (byte1 as u16);
         }
         result
+    }
+
+    pub fn update_joypad(
+        &mut self,
+        a: bool,
+        b: bool,
+        start: bool,
+        select: bool,
+        up: bool,
+        down: bool,
+        left: bool,
+        right: bool,
+    ) {
+        self.gb.joypad.a_button = a;
+        self.gb.joypad.b_button = b;
+        self.gb.joypad.start_button = start;
+        self.gb.joypad.select_button = select;
+        self.gb.joypad.up_button = up;
+        self.gb.joypad.down_button = down;
+        self.gb.joypad.left_button = left;
+        self.gb.joypad.right_button = right;
     }
 }
