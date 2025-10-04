@@ -69,9 +69,9 @@ impl PPU {
     fn oam_scan(&mut self, game_state: &mut GameState) {
         let mut count = 0;
         let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
-            8
+            7
         } else {
-            16
+            15
         };
 
         for i in 0..40 {
@@ -81,9 +81,10 @@ impl PPU {
 
             let sprite_loc = (i * 4) as u8;
             let obj_entry = game_state.get_oam_entry(sprite_loc);
-            if obj_entry[0] < 16 {
+            if (obj_entry[0] <= 8 && obj_entry[0] + sprite_height < 16) || (obj_entry[0] >= 160) {
                 continue;
             }
+
             let y_min = obj_entry[0] - 16;
             let y_max = y_min + sprite_height;
             let ly = game_state.get_ly();
@@ -141,6 +142,7 @@ impl PPU {
                     continue;
                 }
                 let sprite_top = self.active_sprites[i].unwrap().y_pos - 16;
+                // println!("New sprite_top: {sprite_top}");
                 let sprite_left = self.active_sprites[i].unwrap().x_pos - 8;
                 let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
                     7
@@ -175,11 +177,12 @@ impl PPU {
 
                     let pix_val =
                         get_tile_pixel(lcdc, tile_index, h_offset, v_offset, game_state, true);
+
                     if pix_val != 0 {
                         if attrs & SPRITE_PRIORITY == 0 {
                             final_pix = pix_val;
                         } else {
-                            if pix_val == 0 {
+                            if final_pix == 0 {
                                 final_pix = pix_val;
                             }
                         }
@@ -208,7 +211,7 @@ impl PPU {
                     self.current_fb[(ly as u16 * 160u16 + i) as usize] =
                         gb_color_to_u32(next_scanline[i as usize]);
                 }
-            } 
+            }
             game_state.inc_ly(1);
             if ly + 1 == VISIBLE_SL {
                 // VBLANK
@@ -217,7 +220,7 @@ impl PPU {
                 return true;
             }
 
-	    if ly + 1 > MAX_SL {
+            if ly + 1 > MAX_SL {
                 game_state.set_ly(0);
             }
         }

@@ -67,6 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let update = ppu.step(cycles, &mut game_state);
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         if update {
+            // game_state.print_oam();
             window
                 .update_with_buffer(&ppu.current_fb, 160, 144)
                 .unwrap();

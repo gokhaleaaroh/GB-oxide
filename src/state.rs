@@ -688,4 +688,11 @@ impl GameState {
         self.gb.joypad.left_button = left;
         self.gb.joypad.right_button = right;
     }
+
+    // pub fn print_oam(&self) {
+    //     for i in 0..160 {
+    //         print!("0x{:02X}", self.gb.memory.oam[i]);
+    //     }
+    //     println!();
+    // }
 }
