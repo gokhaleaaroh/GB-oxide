@@ -66,6 +66,11 @@ impl PPU {
         }
     }
 
+    fn reset_active_entries(&mut self) {
+        const NONE: Option<OamEntry> = None;
+        self.active_sprites = [NONE; 10];
+    }
+
     fn oam_scan(&mut self, game_state: &mut GameState) {
         let mut count = 0;
         let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
@@ -213,6 +218,7 @@ impl PPU {
                 }
             }
             game_state.inc_ly(1);
+            self.reset_active_entries();
             if ly + 1 == VISIBLE_SL {
                 // VBLANK
                 game_state.write(game_state.read(0xFF0F) | INT_VBLANK, 0xFF0F);
