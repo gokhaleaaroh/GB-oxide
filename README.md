@@ -22,7 +22,5 @@ The directions are mapped to the arrow keys.
   - SRAM emulation and support for saves
 - Pass [Blargg's suite of tests](https://github.com/retrio/gb-test-roms)
 
-Screenshots:
-
-![screenshot](Screenshots/Intro-Credits.jpeg) ![screenshot](Screenshots/Tetris-cropped.png) ![screenshot](Screenshots/select-menu.png)
-![screenshot](Screenshots/gameplay.png) ![screenshot](Screenshots/line-clear.png) ![screenshot](Screenshots/game-over.png)
+Tetris Gameplay: 
+![video](Videos/gameplay.mp4)
