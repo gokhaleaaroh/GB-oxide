@@ -16,6 +16,10 @@ fn gb_color_to_u32(code: u8) -> u32 {
         0b01 => 0xFF9BB7FF, // light blue
         0b10 => 0xFF4863A0, // medium blue
         0b11 => 0xFF0A0A40, // dark navy
+        // 0b00 => 0xFFFFFFFF,
+        // 0b01 => 0xFFd186a8,
+        // 0b10 => 0xFF64c41a,
+        // 0b11 => 0xFF294f4e,
         _ => 0xFFFF00FF,
     }
 }

@@ -1,6 +1,6 @@
 use crate::instructions::*;
 use crate::logger::*;
-use crate::state::{CC, GameState, Register};
+use crate::state::{GameState, Register, CC};
 use std::collections::HashSet;
 
 type InstructionWrapper = fn(&mut GameState) -> u8;
@@ -636,7 +636,7 @@ impl CPU {
 
         let cycles = cycles + if interrupted { 5 } else { 0 };
 
-	let t_cycles = 4 * cycles;
+        let t_cycles = 4 * cycles;
 
         game_state.update_clock(t_cycles);
 
@@ -646,26 +646,25 @@ impl CPU {
             game_state.get_register16(Register::PC) + advance_amount,
         );
 
-	game_state.inc_div(t_cycles);
-	
-	if game_state.get_tac() & 0b100 != 0 {
-	    let tima_update_freq =
-		match game_state.get_tac() & 0b11 {
-		    0b00 => 1024,
-		    0b01 => 16,
-		    0b10 => 64,
-		    0b11 => 256,
-		    _ => unreachable!()
-		};
+        game_state.inc_div(t_cycles);
 
-	    game_state.inc_available_cycles(t_cycles as u16);
-	    let mut available_cycles = game_state.get_available_cycles();
-	    while available_cycles >= tima_update_freq {
-		game_state.dec_available_cycles(tima_update_freq);
-		available_cycles -= tima_update_freq;
-		game_state.update_tima();
-	    }
-	}
+        if game_state.get_tac() & 0b100 != 0 {
+            let tima_update_freq = match game_state.get_tac() & 0b11 {
+                0b00 => 1024,
+                0b01 => 16,
+                0b10 => 64,
+                0b11 => 256,
+                _ => unreachable!(),
+            };
+
+            game_state.inc_available_cycles(t_cycles as u16);
+            let mut available_cycles = game_state.get_available_cycles();
+            while available_cycles >= tima_update_freq {
+                game_state.dec_available_cycles(tima_update_freq);
+                available_cycles -= tima_update_freq;
+                game_state.update_tima();
+            }
+        }
 
         t_cycles
     }

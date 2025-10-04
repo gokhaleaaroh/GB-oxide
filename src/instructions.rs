@@ -865,8 +865,8 @@ pub fn jp_n16(game_state: &mut GameState) -> u8 {
 
 pub fn jp_cc(game_state: &mut GameState, cc: CC) -> u8 {
     let flags = game_state.get_flags();
-    if (matches!(cc, CC::Z, ) && flags.Z)
-        || (matches!(cc, CC::NZ, ) && !flags.Z)
+    if (matches!(cc, CC::Z,) && flags.Z)
+        || (matches!(cc, CC::NZ,) && !flags.Z)
         || (matches!(cc, CC::C) && flags.C)
         || (matches!(cc, CC::NC) && !flags.C)
     {
@@ -997,12 +997,18 @@ pub fn add_sp_e8(game_state: &mut GameState) -> u8 {
 }
 
 pub fn dec_sp(game_state: &mut GameState) -> u8 {
-    game_state.set_register16(Register::SP, game_state.get_register16(Register::SP).wrapping_sub(1));
+    game_state.set_register16(
+        Register::SP,
+        game_state.get_register16(Register::SP).wrapping_sub(1),
+    );
     2
 }
 
 pub fn inc_sp(game_state: &mut GameState) -> u8 {
-    game_state.set_register16(Register::SP, game_state.get_register16(Register::SP).wrapping_add(1));
+    game_state.set_register16(
+        Register::SP,
+        game_state.get_register16(Register::SP).wrapping_add(1),
+    );
     2
 }
 
@@ -1145,7 +1151,7 @@ pub fn interrupt_handler(game_state: &mut GameState) -> bool {
         } else if i_flag & INT_TIMER != 0 && i_enable & INT_TIMER != 0 {
             game_state.write(i_flag & !INT_TIMER, 0xFF0F);
             jump_addr = 0x0050;
-	    println!("EXECUTING TIMER INTERRUPT");
+        // println!("EXECUTING TIMER INTERRUPT");
         } else if i_flag & INT_SERIAL != 0 && i_enable & INT_SERIAL != 0 {
             game_state.write(i_flag & !INT_SERIAL, 0xFF0F);
             jump_addr = 0x0058;

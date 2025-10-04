@@ -515,7 +515,7 @@ impl GameState {
             0xFF06 => self.gb.timer_registers.tma = value,
 
             0xFF07 => {
-                println!("Writing: 0b{:08b} to TAC", value);
+                // println!("Writing: 0b{:08b} to TAC", value);
                 self.gb.timer_registers.tac = value;
             }
 
