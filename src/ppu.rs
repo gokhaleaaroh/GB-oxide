@@ -138,7 +138,7 @@ impl PPU {
                 let y_tile = (win_y % 8) as u8;
                 // println!("TY: {}", t_y);
                 let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
-                let tile_index = game_state.get_tile_index(i_in_tmap);
+                let tile_index = game_state.get_tile_index(i_in_tmap, true);
                 final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state, false);
             } else {
                 // Only compute BG if Window pixel is off
@@ -147,7 +147,7 @@ impl PPU {
                 let t_x = bg_x / 8;
                 let t_y = bg_y / 8;
                 let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
-                let tile_index = game_state.get_tile_index(i_in_tmap);
+                let tile_index = game_state.get_tile_index(i_in_tmap, false);
                 let x_tile = (bg_x % 8) as u8;
                 let y_tile = (bg_y % 8) as u8;
                 final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state, false);
@@ -179,7 +179,7 @@ impl PPU {
                     };
                     let x_flip = attrs & SPRITE_X_FLIP != 0;
                     let h_offset = if x_flip {
-                        7 - (x_screen as i16 - sprite_left) as u8
+                        (7 - (x_screen as i16 - sprite_left)) as u8
                     } else {
                         (x_screen as i16 - sprite_left) as u8
                     };

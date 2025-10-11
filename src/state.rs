@@ -818,8 +818,10 @@ impl GameState {
         self.gb.io_registers.ly = val;
     }
 
-    pub fn get_tile_index(&self, tile_in_map: u16) -> u8 {
-        if self.gb.io_registers.lcdc & LCDC_TILE_MAP == 0 {
+    pub fn get_tile_index(&self, tile_in_map: u16, window: bool) -> u8 {
+        if (window && self.gb.io_registers.lcdc & LCDC_WIN_TILE_MAP == 0)
+            || (!window && self.gb.io_registers.lcdc & LCDC_BG_TILE_MAP == 0)
+        {
             return self.read(0x9800 + tile_in_map);
         } else {
             return self.read(0x9C00 + tile_in_map);
