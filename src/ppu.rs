@@ -12,18 +12,18 @@ struct OamEntry {
 
 fn gb_color_to_u32(code: u8) -> u32 {
     match code {
-        // 0b00 => 0xFFFFFFFF, // white
-        // 0b01 => 0xFF9BB7FF, // light blue
-        // 0b10 => 0xFF4863A0, // medium blue
-        // 0b11 => 0xFF0A0A40, // dark navy
-        0b00 => 0xFFFFFFFF,
-        0b01 => 0xFFd186a8,
-        0b10 => 0xFF64c41a,
-        0b11 => 0xFF294f4e,
-        // 0b11 => 0xFFFFFFFF, // white
-        // 0b10 => 0xFFb3b3b3, // light blue
-        // 0b01 => 0xFF6b6b69, // medium blue
-        // 0b00 => 0xFF1c1c1b, // dark navy
+        0b00 => 0xFFFFFFFF, // white
+        0b01 => 0xFF9BB7FF, // light blue
+        0b10 => 0xFF4863A0, // medium blue
+        0b11 => 0xFF0A0A40, // dark navy
+        // 0b00 => 0xFFFFFFFF,
+        // 0b01 => 0xFFd186a8,
+        // 0b10 => 0xFF64c41a,
+        // 0b11 => 0xFF294f4e,
+        // 0b11 => 0xFFFFFFFF,
+        // 0b10 => 0xFFb3b3b3,
+        // 0b01 => 0xFF6b6b69,
+        // 0b00 => 0xFF1c1c1b,
         _ => 0xFFFF00FF,
     }
 }
@@ -98,11 +98,11 @@ impl PPU {
                 continue;
             }
 
-            let y_min = obj_entry[0] - 16;
-            let y_max = y_min + sprite_height;
+            let y_min: i16 = obj_entry[0] as i16 - 16;
+            let y_max = y_min + sprite_height as i16;
             let ly = game_state.get_ly();
 
-            if y_min <= ly && ly <= y_max {
+            if y_min <= ly as i16 && ly as i16 <= y_max {
                 self.active_sprites[count] = Some(OamEntry {
                     y_pos: obj_entry[0],
                     x_pos: obj_entry[1],
@@ -126,14 +126,15 @@ impl PPU {
         for x_screen in 0..160u8 {
             let mut final_pix;
 
-            if lcdc & LCDC_WIN_ON != 0 && (ly >= wy && x_screen >= wx - 7) {
+            if lcdc & LCDC_WIN_ON != 0 && (ly >= wy && x_screen as i16 >= (wx as i16 - 7)) {
                 // Window enabled
-                let win_x = x_screen - wx + 7;
+                let win_x = (x_screen as i16 - (wx as i16 - 7)) as u8;
                 let win_y = ly - wy;
-                let t_x = win_x / 8;
-                let t_y = win_y / 8;
+                let t_x: u16 = (win_x / 8) as u16;
+                let t_y: u16 = (win_y / 8) as u16;
                 let x_tile = (win_x % 8) as u8;
                 let y_tile = (win_y % 8) as u8;
+                // println!("TY: {}", t_y);
                 let i_in_tmap = (t_y * 32) as u16 + t_x as u16;
                 let tile_index = game_state.get_tile_index(i_in_tmap);
                 final_pix = get_tile_pixel(lcdc, tile_index, x_tile, y_tile, game_state, false);
@@ -154,31 +155,31 @@ impl PPU {
                 if self.active_sprites[i].is_none() {
                     continue;
                 }
-                let sprite_top = self.active_sprites[i].unwrap().y_pos - 16;
+                let sprite_top: i16 = self.active_sprites[i].unwrap().y_pos as i16 - 16;
                 // println!("New sprite_top: {sprite_top}");
-                let sprite_left = self.active_sprites[i].unwrap().x_pos - 8;
+                let sprite_left: i16 = self.active_sprites[i].unwrap().x_pos as i16 - 8;
                 let sprite_height = if game_state.get_lcdc() & LCDC_TILE_SIZE == 0 {
                     7
                 } else {
                     15
                 };
 
-                if (sprite_top <= ly && ly <= sprite_top + sprite_height)
-                    && (sprite_left <= x_screen && x_screen <= sprite_left + 7)
+                if (sprite_top <= ly as i16 && ly as i16 <= sprite_top + sprite_height)
+                    && (sprite_left <= x_screen as i16 && x_screen as i16 <= sprite_left + 7)
                 {
                     // sprite in line
                     let attrs = self.active_sprites[i].unwrap().attrs;
                     let y_flip = attrs & SPRITE_Y_FLIP != 0;
                     let v_offset = if y_flip {
-                        sprite_height - (ly - sprite_top)
+                        (sprite_height - (ly as i16 - sprite_top)) as u8
                     } else {
-                        ly - sprite_top
+                        (ly as i16 - sprite_top) as u8
                     };
                     let x_flip = attrs & SPRITE_X_FLIP != 0;
                     let h_offset = if x_flip {
-                        7 - (x_screen - sprite_left)
+                        7 - (x_screen as i16 - sprite_left) as u8
                     } else {
-                        x_screen - sprite_left
+                        (x_screen as i16 - sprite_left) as u8
                     };
                     let tile_index;
                     if sprite_height == 7 {

@@ -212,7 +212,8 @@ struct Cartridge {
     num_ram_banks: u8,
     sram_enabled: bool,
     mbc: MbcType,
-    current_bank: u8,
+    current_rom_bank: u16,
+    current_ram_bank: u8,
 }
 
 impl Cartridge {
@@ -277,7 +278,8 @@ impl Cartridge {
             num_ram_banks: num_ram_banks,
             sram_enabled: false,
             mbc,
-            current_bank: 1,
+            current_rom_bank: 1,
+            current_ram_bank: 0,
         })
     }
 }
@@ -425,13 +427,29 @@ impl GameState {
 
             0x4000..=0x7FFF => {
                 // TODO Implement Bank switching
-                self.cart.rom[addr as usize]
+
+                if (ROM_BANK_SIZE as u64 * (self.cart.current_rom_bank as u64 + 1))
+                    <= self.cart.rom.len() as u64
+                {
+                    self.cart.rom[(addr as u64
+                        + (ROM_BANK_SIZE as u64 * (self.cart.current_rom_bank as u64 - 1)))
+                        as usize]
+                } else {
+                    println!("GARBLED, current rom bank: {}", self.cart.current_rom_bank);
+                    println!(
+                        "GARBLED, current rom size: {}",
+                        ROM_BANK_SIZE * (self.cart.current_rom_bank + 1)
+                    );
+                    println!("size: {}", self.cart.rom.len());
+                    0xFF
+                }
             }
 
             0x8000..=0x9FFF => self.gb.memory.vram[addr as usize - 0x8000],
 
             0xA000..=0xBFFF => {
-                let index = (addr - 0xA000) as usize;
+                let index = ((addr - 0xA000) + (RAM_BANK_SIZE * self.cart.current_ram_bank as u16))
+                    as usize;
 
                 if self.cart.sram.len() > index {
                     self.cart.sram[index]
@@ -551,9 +569,9 @@ impl GameState {
                         }
                     } else {
                         if value & 0x0F == 0 {
-                            self.cart.current_bank = 1;
+                            self.cart.current_rom_bank = 1;
                         } else {
-                            self.cart.current_bank = value & 0x0F;
+                            self.cart.current_rom_bank = (value & 0x0F) as u16;
                         }
                     }
                     return;
@@ -574,6 +592,7 @@ impl GameState {
 
                 // ROM Bank Switch
                 if addr >= 0x2000 && addr <= 0x3FFF {
+                    // TODO MBC1 >5 bit logic
                     let mut mask = match self.cart.mbc {
                         MbcType::Mbc1 => 0b0001_1111,
                         MbcType::Mbc3 => 0b0111_1111,
@@ -595,16 +614,24 @@ impl GameState {
                     if masked_val == 0 {
                         if matches!(self.cart.mbc, MbcType::Mbc1) && value & 0b0001_0000 != 0 {
                             // Special case in MBC1 for mapping 0x4000-0x7FFF to bank 0
-                            self.cart.current_bank = 0;
+                            self.cart.current_rom_bank = 0;
                         } else {
-                            self.cart.current_bank = 1;
+                            self.cart.current_rom_bank = 1;
                         }
                     } else {
-                        self.cart.current_bank = masked_val;
+                        self.cart.current_rom_bank = masked_val as u16;
                     }
                 }
 
                 // RAM Bank Switch
+                // TODO Implement MBC1 + RAM
+                // Only implementing MBC3 + RAM
+                if addr >= 0x4000 && addr <= 0x5FFF {
+                    match value {
+                        0x00..0x07 => self.cart.current_ram_bank = value,
+                        _ => self.cart.current_ram_bank = 0,
+                    };
+                }
             }
 
             0x8000..=0x9FFF => {
