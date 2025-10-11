@@ -41,7 +41,7 @@ fn get_tile_pixel(
     if lcdc & LCDC_TILE_BG_DATA == 0 && !sprite {
         // 0x9000 addressing mode
         if tile_index <= 127 {
-            tile_addr = 0x8000 + (tile_index as u16 * 16);
+            tile_addr = 0x9000 + (tile_index as u16 * 16);
         } else {
             tile_addr = 0x8800 + ((tile_index - 128) as u16 * 16);
         }

@@ -581,8 +581,10 @@ impl GameState {
                 if addr <= 0x1FFF {
                     if value == 0x0A {
                         self.cart.sram_enabled = true;
+                        println!("SRAM ENABLED!");
                     } else if value == 0x00 {
                         self.cart.sram_enabled = false;
+                        println!("SRAM DISABLED!");
                     }
                 }
 
@@ -643,7 +645,8 @@ impl GameState {
             }
 
             0xA000..=0xBFFF => {
-                let index = (addr - 0xA000) as usize;
+                let index = ((addr - 0xA000) + (RAM_BANK_SIZE * self.cart.current_ram_bank as u16))
+                    as usize;
 
                 if self.cart.sram.len() > index {
                     self.cart.sram[index] = value;
