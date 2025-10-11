@@ -392,7 +392,7 @@ pub fn dec_hladdr(game_state: &mut GameState) -> u8 {
 }
 
 pub fn dec_r16(game_state: &mut GameState, r: Register) -> u8 {
-    game_state.set_register16(r, game_state.get_register16(r) - (1 as u16));
+    game_state.set_register16(r, game_state.get_register16(r).wrapping_sub(1));
     2
 }
 
@@ -430,7 +430,7 @@ pub fn inc_hladdr(game_state: &mut GameState) -> u8 {
 }
 
 pub fn inc_r16(game_state: &mut GameState, r: Register) -> u8 {
-    game_state.set_register16(r, game_state.get_register16(r) + (1 as u16));
+    game_state.set_register16(r, game_state.get_register16(r).wrapping_add(1));
     2
 }
 
