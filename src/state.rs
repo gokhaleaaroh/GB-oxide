@@ -65,7 +65,6 @@ struct Registers {
     pc: u16,
     sp: u16,
 }
-
 impl Registers {
     fn reset_registers() -> Self {
         Self {
@@ -208,29 +207,75 @@ enum MbcType {
 
 struct Cartridge {
     rom: Vec<u8>,
-    ram: Vec<u8>,
+    num_rom_banks: u16,
+    sram: Vec<u8>,
+    num_ram_banks: u8,
+    sram_enabled: bool,
     mbc: MbcType,
-    current_bank: usize,
+    current_bank: u8,
 }
 
 impl Cartridge {
     pub fn load_rom(path: &str) -> std::io::Result<Self> {
         let rom = fs::read(path)?;
 
-        // TODO Read ROM header to figure out MBC type and RAM size
-
         let mbc;
-        if rom[0x0147] == 0x01 {
+        if rom[0x0147] == 0x01 || rom[0x0147] == 0x02 || rom[0x0147] == 0x03 {
             mbc = MbcType::Mbc1;
+        } else if rom[0x0147] == 0x05 || rom[0x0147] == 0x06 {
+            mbc = MbcType::Mbc2;
+        } else if rom[0x0147] == 0x0F
+            || rom[0x0147] == 0x10
+            || rom[0x0147] == 0x11
+            || rom[0x0147] == 0x12
+            || rom[0x0147] == 0x13
+        {
+            mbc = MbcType::Mbc3;
+        } else if rom[0x0147] == 0x19
+            || rom[0x0147] == 0x1A
+            || rom[0x0147] == 0x1B
+            || rom[0x0147] == 0x1C
+            || rom[0x0147] == 0x1D
+            || rom[0x0147] == 0x1E
+        {
+            mbc = MbcType::Mbc5;
         } else {
             mbc = MbcType::RomOnly;
         }
 
-        let ram_size = 0x2000;
+        let rom_size_code = rom[0x0148];
+        let num_rom_banks: u16;
+
+        match rom_size_code {
+            0x01 => num_rom_banks = 4,
+            0x02 => num_rom_banks = 8,
+            0x03 => num_rom_banks = 16,
+            0x04 => num_rom_banks = 32,
+            0x05 => num_rom_banks = 64,
+            0x06 => num_rom_banks = 128,
+            0x07 => num_rom_banks = 256,
+            0x08 => num_rom_banks = 512,
+            _ => num_rom_banks = 2,
+        };
+
+        let ram_size_code = rom[0x0149];
+
+        let num_ram_banks: u8;
+
+        match ram_size_code {
+            0x02 => num_ram_banks = 1,
+            0x03 => num_ram_banks = 4,
+            0x04 => num_ram_banks = 16,
+            0x05 => num_ram_banks = 8,
+            _ => num_ram_banks = 0,
+        }
 
         Ok(Self {
             rom,
-            ram: vec![0; ram_size],
+            num_rom_banks: num_rom_banks,
+            sram: vec![0; (num_ram_banks as u16 * RAM_BANK_SIZE) as usize],
+            num_ram_banks: num_ram_banks,
+            sram_enabled: false,
             mbc,
             current_bank: 1,
         })
@@ -386,8 +431,13 @@ impl GameState {
             0x8000..=0x9FFF => self.gb.memory.vram[addr as usize - 0x8000],
 
             0xA000..=0xBFFF => {
-                // TODO External RAM
-                0xFF
+                let index = (addr - 0xA000) as usize;
+
+                if self.cart.sram.len() > index {
+                    self.cart.sram[index]
+                } else {
+                    0xFF
+                }
             }
 
             0xC000..=0xDFFF => self.gb.memory.wram[addr as usize - 0xC000],
@@ -489,7 +539,73 @@ impl GameState {
 
     pub fn write(&mut self, value: u8, addr: u16) {
         match addr {
-            0x0000..=0x7FFF => (), // Read-Only!
+            // Read-Only! Except for bank switch and SRAM enable
+            0x0000..=0x7FFF => {
+                // MBC2
+                if addr <= 0x3FFF && matches!(self.cart.mbc, MbcType::Mbc2) {
+                    if value & 0x80 == 0 {
+                        if value & 0x0F == 0x0A {
+                            self.cart.sram_enabled = true;
+                        } else {
+                            self.cart.sram_enabled = false;
+                        }
+                    } else {
+                        if value & 0x0F == 0 {
+                            self.cart.current_bank = 1;
+                        } else {
+                            self.cart.current_bank = value & 0x0F;
+                        }
+                    }
+                    return;
+                }
+
+                // General SRAM enable
+                if addr <= 0x1FFF {
+                    if value == 0x0A {
+                        self.cart.sram_enabled = true;
+                    } else if value == 0x00 {
+                        self.cart.sram_enabled = false;
+                    }
+                }
+
+                if matches!(self.cart.mbc, MbcType::RomOnly) {
+                    return;
+                }
+
+                // ROM Bank Switch
+                if addr >= 0x2000 && addr <= 0x3FFF {
+                    let mut mask = match self.cart.mbc {
+                        MbcType::Mbc1 => 0b0001_1111,
+                        MbcType::Mbc3 => 0b0111_1111,
+                        _ => 0,
+                    };
+
+                    match self.cart.num_rom_banks {
+                        4 => mask &= 0b0000_0011,
+                        8 => mask &= 0b0000_0111,
+                        16 => mask &= 0b0000_1111,
+                        32 => mask &= 0b0001_1111,
+                        64 => mask &= 0b0011_1111,
+                        128 => mask &= 0b0111_1111,
+                        _ => mask &= 0b0000_0000,
+                    };
+
+                    let masked_val = value & mask;
+
+                    if masked_val == 0 {
+                        if matches!(self.cart.mbc, MbcType::Mbc1) && value & 0b0001_0000 != 0 {
+                            // Special case in MBC1 for mapping 0x4000-0x7FFF to bank 0
+                            self.cart.current_bank = 0;
+                        } else {
+                            self.cart.current_bank = 1;
+                        }
+                    } else {
+                        self.cart.current_bank = masked_val;
+                    }
+                }
+
+                // RAM Bank Switch
+            }
 
             0x8000..=0x9FFF => {
                 // println!(
@@ -500,8 +616,13 @@ impl GameState {
             }
 
             0xA000..=0xBFFF => {
-                // TODO External RAM
-                ()
+                let index = (addr - 0xA000) as usize;
+
+                if self.cart.sram.len() > index {
+                    self.cart.sram[index] = value;
+                } else {
+                    ()
+                }
             }
 
             0xC000..=0xDFFF => {
@@ -582,6 +703,10 @@ impl GameState {
 
     pub fn update_clock(&mut self, add_cycles: u8) {
         self.gb.cycles += add_cycles as u128;
+    }
+
+    pub fn get_clock(&self) -> u128 {
+        self.gb.cycles
     }
 
     pub fn inc_div(&mut self, amount: u8) {
