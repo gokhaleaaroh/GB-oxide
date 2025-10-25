@@ -414,6 +414,7 @@ impl GameState {
     }
 
     fn dma_oam(&mut self, value: u8) {
+        // println!("DMA OAM");
         self.gb.dma = value;
         let start = (value as u16) << 8;
         for i in 0..160 {
@@ -736,7 +737,7 @@ impl GameState {
         self.gb.pc_moved = val;
     }
 
-    pub fn update_clock(&mut self, add_cycles: u8) {
+    pub fn update_clock(&mut self, add_cycles: u16) {
         self.gb.cycles += add_cycles as u128;
     }
 

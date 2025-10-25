@@ -171,6 +171,7 @@ impl PPU {
                 {
                     // sprite in line
                     let attrs = self.active_sprites[i].unwrap().attrs;
+                    // let y_flip = attrs & SPRITE_Y_FLIP != 0;
                     let y_flip = attrs & SPRITE_Y_FLIP != 0;
                     let v_offset = if y_flip {
                         (sprite_height - (ly as i16 - sprite_top)) as u8
@@ -183,16 +184,19 @@ impl PPU {
                     } else {
                         (x_screen as i16 - sprite_left) as u8
                     };
-                    let tile_index;
-                    if sprite_height == 7 {
-                        tile_index = self.active_sprites[i].unwrap().tile_index;
-                    } else {
-                        tile_index = (self.active_sprites[i].unwrap().tile_index & 0b1111_1110)
-                            + (if v_offset >= 8 { 1 } else { 0 });
-                    }
 
-                    let pix_val =
-                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset, game_state, true);
+                    let tile_index = if sprite_height == 7 {
+                        self.active_sprites[i].unwrap().tile_index
+                    } else {
+                        (self.active_sprites[i].unwrap().tile_index & 0b1111_1110)
+                            + (if v_offset >= 8 { 1 } else { 0 })
+                    };
+
+                    let pix_val = if v_offset < 8 {
+                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset, game_state, true)
+                    } else {
+                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset - 8, game_state, true)
+                    };
 
                     if pix_val != 0 {
                         if attrs & SPRITE_PRIORITY == 0 {
@@ -214,7 +218,7 @@ impl PPU {
     }
 
     // return true if new frame is ready
-    pub fn step(&mut self, cycles: u8, game_state: &mut GameState) -> bool {
+    pub fn step(&mut self, cycles: u16, game_state: &mut GameState) -> bool {
         self.dot_counter += cycles as u128;
         while self.dot_counter >= DOTS_PER_SL as u128 {
             self.dot_counter -= DOTS_PER_SL as u128;
