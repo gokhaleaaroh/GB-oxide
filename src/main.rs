@@ -79,6 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         game_state.update_joypad(a, b, start, select, up, down, left, right);
 
+<<<<<<< HEAD
         let cycles = cpu.step(&mut game_state);
         let pos = game_state.get_register16(state::Register::PC);
 
@@ -93,6 +94,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             //     game_state.get_interrupts()
             // );
         }
+=======
+        let cycles = cpu.step(&mut game_state) as u16;
+>>>>>>> main
         let update = ppu.step(cycles, &mut game_state);
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         if update {

@@ -636,7 +636,7 @@ impl CPU {
 
         let t_cycles = 4 * cycles;
 
-        game_state.update_clock(t_cycles);
+        game_state.update_clock(t_cycles as u16);
 
         // it is possible for curr_pc and Register::PC to disagree at this point
         game_state.set_register16(
