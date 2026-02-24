@@ -592,16 +592,14 @@ impl CPU {
         {
             interrupted = interrupt_handler(game_state);
         }
-
+        if game_state.print_vals {
+            if game_state.get_register16(Register::PC) == 0x0040 {
+                println!("VBLANK");
+            }
+        }
         let curr_pc = game_state.get_register16(Register::PC);
         let next_instruction = game_state.read(curr_pc);
-        // print!(
-        //     "PC: 0x{:04X}, OP: 0x{:02X}, SP: 0x{:04X}",
-        //     curr_pc,
-        //     next_instruction,
-        //     game_state.get_register16(Register::SP)
-        // );
-        let cycles;
+        let mut cycles;
 
         let mut advance_amount = 1;
         if next_instruction != 0xCB {

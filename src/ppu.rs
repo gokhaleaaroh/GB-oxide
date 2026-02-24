@@ -124,10 +124,11 @@ impl PPU {
         let lcdc = game_state.get_lcdc();
 
         for x_screen in 0..160u8 {
-            let mut final_pix;
+            let mut final_pix = 0;
 
-            if lcdc & LCDC_WIN_ON != 0
+            if (lcdc & LCDC_WIN_ON) != 0
                 && (ly >= wy && x_screen as i16 >= (wx as i16 - 7) && wx <= 166 && wy <= 143)
+                && game_state.toggle_window
             {
                 // Window enabled
                 let win_x = (x_screen as i16 - (wx as i16 - 7)) as u8;
@@ -191,8 +192,18 @@ impl PPU {
                             + (if v_offset >= 8 { 1 } else { 0 });
                     }
 
-                    let pix_val =
-                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset, game_state, true);
+                    let pix_val = get_tile_pixel(
+                        lcdc,
+                        tile_index,
+                        h_offset,
+                        if v_offset >= 8 {
+                            v_offset - 8
+                        } else {
+                            v_offset
+                        },
+                        game_state,
+                        true,
+                    );
 
                     if pix_val != 0 {
                         if attrs & SPRITE_PRIORITY == 0 {
@@ -233,7 +244,9 @@ impl PPU {
             if ly + 1 == VISIBLE_SL {
                 // VBLANK
                 game_state.write(game_state.read(0xFF0F) | INT_VBLANK, 0xFF0F);
-                // println!("VBLANK");
+                if game_state.print_vals {
+                    // println!("VBLANK");
+                }
                 return true;
             }
 

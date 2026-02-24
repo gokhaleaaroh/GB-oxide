@@ -37,6 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // 	println!("OP 0x{:04X}: 0x{:02X}", 0x0100 + i, game_state.read(0x0100 + i as u16));
     // }
 
+    let mut print_pc = false;
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let (mut a, mut b, mut start, mut select, mut down, mut up, mut left, mut right) =
             (false, false, false, false, false, false, false, false);
@@ -55,9 +56,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             right = true;
         }
 
+        if window.is_key_down(Key::R) {
+            game_state.toggle_window = !game_state.toggle_window;
+        }
+
         // Start, Select, B, A
         if window.is_key_down(Key::S) {
             select = true;
+            // print_pc = !print_pc;
+            // game_state.print_vals = true;
         }
         if window.is_key_down(Key::A) {
             start = true;
@@ -73,6 +80,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         game_state.update_joypad(a, b, start, select, up, down, left, right);
 
         let cycles = cpu.step(&mut game_state);
+        let pos = game_state.get_register16(state::Register::PC);
+
+        if print_pc {
+
+            // println!(
+            //     "LY: {}, LCDC: {}, IF: {}, IE: {}, IME: {}",
+            //     game_state.get_ly(),
+            //     game_state.get_lcdc(),
+            //     game_state.get_i_flag(),
+            //     game_state.get_i_enable(),
+            //     game_state.get_interrupts()
+            // );
+        }
         let update = ppu.step(cycles, &mut game_state);
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         if update {
