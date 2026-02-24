@@ -186,9 +186,13 @@ impl PPU {
                         (x_screen as i16 - sprite_left) as u8
                     };
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
+                    let tile_index = if sprite_height == 7 {
+                        self.active_sprites[i].unwrap().tile_index
+                    } else {
+                        (self.active_sprites[i].unwrap().tile_index & 0b1111_1110)
+                            + (if v_offset >= 8 { 1 } else { 0 })
+                    };
+
                     let pix_val = get_tile_pixel(
                         lcdc,
                         tile_index,
@@ -201,24 +205,6 @@ impl PPU {
                         game_state,
                         true,
                     );
-=======
->>>>>>> ppu-state-machine
-                    let tile_index = if sprite_height == 7 {
-                        self.active_sprites[i].unwrap().tile_index
-                    } else {
-                        (self.active_sprites[i].unwrap().tile_index & 0b1111_1110)
-                            + (if v_offset >= 8 { 1 } else { 0 })
-                    };
-
-                    let pix_val = if v_offset < 8 {
-                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset, game_state, true)
-                    } else {
-                        get_tile_pixel(lcdc, tile_index, h_offset, v_offset - 8, game_state, true)
-                    };
-<<<<<<< HEAD
-=======
->>>>>>> main
->>>>>>> ppu-state-machine
 
                     if pix_val != 0 {
                         if attrs & SPRITE_PRIORITY == 0 {
