@@ -287,6 +287,8 @@ impl Cartridge {
 pub struct GameState {
     gb: Gameboy,
     cart: Cartridge,
+    pub print_vals: bool,
+    pub toggle_window: bool,
 }
 
 impl GameState {
@@ -294,6 +296,8 @@ impl GameState {
         Ok(Self {
             gb: Gameboy::reset_gb(),
             cart: Cartridge::load_rom(path)?,
+            print_vals: false,
+            toggle_window: true,
         })
     }
 
@@ -615,7 +619,7 @@ impl GameState {
                     };
 
                     let masked_val = value & mask;
-
+                    // println!("Switching to bank: {}", masked_val);
                     if masked_val == 0 {
                         if matches!(self.cart.mbc, MbcType::Mbc1) && value & 0b0001_0000 != 0 {
                             // Special case in MBC1 for mapping 0x4000-0x7FFF to bank 0
@@ -631,10 +635,11 @@ impl GameState {
                 // RAM Bank Switch
                 // TODO Implement MBC1 + RAM
                 // Only implementing MBC3 + RAM
-                if addr >= 0x4000 && addr <= 0x5FFF {
+                if addr >= 0x4000 && addr <= 0x5fff {
                     match value {
                         0x00..0x07 => self.cart.current_ram_bank = value,
-                        _ => self.cart.current_ram_bank = 0,
+                        _ => { // self.cart.current_ram_bank = 0,
+                        }
                     };
                 }
             }
@@ -858,6 +863,17 @@ impl GameState {
         self.gb.joypad.down_button = down;
         self.gb.joypad.left_button = left;
         self.gb.joypad.right_button = right;
+        if !(a == false
+            && b == false
+            && start == false
+            && select == false
+            && up == false
+            && down == false
+            && left == false
+            && right == false)
+        {
+            self.gb.i_flag |= INT_JOYPAD;
+        }
     }
 
     // pub fn print_oam(&self) {
